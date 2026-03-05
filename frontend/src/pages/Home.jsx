@@ -80,7 +80,7 @@ const Home = () => {
                                 ))}
                             </div>
                             <p className="text-sm font-medium text-slate-500">
-                                <span className="text-[#0F172A] font-bold">500+</span> Students Joined Recently
+                                <span className="text-[#0F172A] font-bold">100+</span> Students Joined Recently
                             </p>
                         </div>
                     </motion.div>

@@ -896,7 +896,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
                 setFormData(prev => ({ ...prev, subject: firstSub.name }));
             }
         }
-    }, [subjects, formData.category]);
+    }, [subjects, formData.category, formData.subject]);
 
     const handleAddQuestion = () => {
         setQuestions([...questions, { question: '', options: ['', '', '', ''], answer: 0, file: null, preview: null }]);
@@ -1233,6 +1233,15 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                            <div className="flex justify-center mt-6">
+                                <button
+                                    type="button"
+                                    onClick={handleAddQuestion}
+                                    className="bg-[#C2410C]/10 text-[#C2410C] border border-[#C2410C]/20 px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#C2410C]/20 transition-colors flex items-center gap-2"
+                                >
+                                    + Add Next Question
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -1580,6 +1589,15 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
                                         </div>
                                     </div>
                                 ))}
+                            </div>
+                            <div className="flex justify-center mt-6">
+                                <button
+                                    type="button"
+                                    onClick={handleAddQuestion}
+                                    className="bg-[#C2410C]/10 text-[#C2410C] border border-[#C2410C]/20 px-6 py-2.5 rounded-xl text-sm font-bold hover:bg-[#C2410C]/20 transition-colors flex items-center gap-2"
+                                >
+                                    + Add Next Question
+                                </button>
                             </div>
                         </div>
                     </form>
