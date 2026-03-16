@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Save, FileText, Hash, AlertTriangle, Wand2, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Hash, AlertTriangle, Wand2, Check, Loader2 } from 'lucide-react';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import axios from 'axios';
@@ -34,7 +34,7 @@ const CreateTest = () => {
             }
         };
         fetchSubjects();
-    }, []);
+    }, [formData.category]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
     GraduationCap,
@@ -18,12 +18,7 @@ import {
     LogOut,
     Sparkles,
     TrendingUp,
-    Users,
-    Zap,
-    MessageSquare,
-    Star,
-    Loader2,
-    X
+    Zap
 } from 'lucide-react';
 import ReviewSection from '../components/ReviewSection';
 import TestimonialsSection from '../components/TestimonialsSection';
@@ -236,19 +231,6 @@ const StudentHome = () => {
                                         <h4 className="font-bold text-[#0F172A] text-base md:text-lg">Online Classes</h4>
                                     </div>
                                     <p className="text-slate-600 text-[10px] md:text-sm">Learn from anywhere, anytime</p>
-                                </motion.div>
-
-                                {/* Stats Badge */}
-                                <motion.div
-                                    animate={{ scale: [1, 1.1, 1] }}
-                                    transition={{ duration: 3, repeat: Infinity }}
-                                    className="absolute top-10 -right-4 md:right-0 bg-gradient-to-br from-purple-500 to-pink-600 text-white px-4 md:px-6 py-3 md:py-4 rounded-xl md:rounded-2xl shadow-xl z-30 scale-75 md:scale-100"
-                                >
-                                    <div className="flex items-center gap-2 mb-1">
-                                        <Users size={16} md={20} />
-                                        <span className="text-xl md:text-2xl font-bold">500+</span>
-                                    </div>
-                                    <p className="text-[10px] text-purple-100">Active Students</p>
                                 </motion.div>
                             </div>
                         </motion.div>

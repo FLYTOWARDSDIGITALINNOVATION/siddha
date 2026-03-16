@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ChevronRight, ChevronLeft, Check, User, Phone, BookOpen, Users, FileText, Lock } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Check, User, BookOpen, Lock } from 'lucide-react';
 import AuthLayout from '../../components/Layout/AuthLayout';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';

@@ -263,20 +263,126 @@ const AdminDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             const response = await axios.get(`http://localhost:5000/api/admin/question-banks/${bank._id}/download`, {
-                headers: { Authorization: `Bearer ${token}` },
-                responseType: 'blob'
+                headers: { Authorization: `Bearer ${token}` }
             });
-            const url = window.URL.createObjectURL(new Blob([response.data]));
-            const link = document.createElement('a');
-            link.href = url;
-            link.setAttribute('download', bank.filename || `${bank.title}.json`);
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
+            
+            const questionData = response.data;
+            
+            // Dynamic import of jspdf and jspdf-autotable to prevent issues with SSR/bundling if any
+            const { jsPDF } = await import('jspdf');
+            await import('jspdf-autotable');
+            
+            const doc = new jsPDF();
+            
+            // Header
+            doc.setFontSize(20);
+            doc.text(bank.title || 'Question Bank', 14, 22);
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(`Subject: ${bank.subject || 'N/A'} | Category: ${bank.category || 'N/A'}`, 14, 30);
+            doc.text(`Difficulty: ${bank.difficulty || 'N/A'} | Total Questions: ${questionData.length}`, 14, 36);
+            
+            doc.setDrawColor(200);
+            doc.line(14, 40, 196, 40);
+            
+            let yPos = 48;
+            
+            questionData.forEach((q, index) => {
+                // Check if we need a new page
+                if (yPos > 270) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                
+                doc.setFontSize(12);
+                doc.setTextColor(0);
+                doc.setFont("helvetica", "bold");
+                
+                const questionText = `${index + 1}. ${q.question}`;
+                const splitQuestion = doc.splitTextToSize(questionText, 180);
+                doc.text(splitQuestion, 14, yPos);
+                yPos += (splitQuestion.length * 6) + 2;
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(11);
+                
+                if (q.options && Array.isArray(q.options)) {
+                    q.options.forEach((opt, optIndex) => {
+                        const optLetter = String.fromCharCode(97 + optIndex); // a, b, c, d...
+                        const optText = `${optLetter}) ${opt}`;
+                        const splitOpt = doc.splitTextToSize(optText, 170);
+                        
+                        // Check pagination inside options
+                        if (yPos > 280) {
+                            doc.addPage();
+                            yPos = 20;
+                        }
+                        
+                        doc.text(splitOpt, 20, yPos);
+                        yPos += (splitOpt.length * 6);
+                    });
+                }
+                
+                yPos += 2;
+                
+                // Add Answer
+                if (q.answer !== undefined) {
+                    // Check pagination for answer
+                    if (yPos > 280) {
+                        doc.addPage();
+                        yPos = 20;
+                    }
+                    
+                    doc.setFont("helvetica", "italic");
+                    doc.setTextColor(0, 128, 0); // Green color for answer
+                    
+                    let answerText = "Answer: ";
+                    if (typeof q.answer === 'number' && q.options) {
+                        answerText += `${String.fromCharCode(97 + q.answer)}) ${q.options[q.answer]}`;
+                    } else {
+                        answerText += q.answer;
+                    }
+                    
+                    doc.text(answerText, 20, yPos);
+                    yPos += 8;
+                }
+                
+                doc.setTextColor(0);
+                yPos += 4; // Space between questions
+            });
+            
+            // Add page numbers
+            const pageCount = doc.internal.getNumberOfPages();
+            for(let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(10);
+                doc.setTextColor(150);
+                doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, 290, { align: 'center' });
+            }
+            
+            doc.save(`${bank.filename ? bank.filename.replace('.json', '') : bank.title.replace(/\s+/g, '_')}.pdf`);
+            
         } catch (err) {
             console.error("Download failed", err);
-            const msg = err.response?.data?.message || err.message;
-            alert(`Failed to download: ${msg}`);
+            alert(`Failed to download JSON, trying fallback...`);
+            
+            // Fallback to old json download if PDF generation fails
+            try {
+               const token = localStorage.getItem('token');
+               const response = await axios.get(`http://localhost:5000/api/admin/question-banks/${bank._id}/download`, {
+                   headers: { Authorization: `Bearer ${token}` },
+                   responseType: 'blob'
+               });
+               const url = window.URL.createObjectURL(new Blob([response.data]));
+               const link = document.createElement('a');
+               link.href = url;
+               link.setAttribute('download', bank.filename || `${bank.title}.json`);
+               document.body.appendChild(link);
+               link.click();
+               link.remove();
+            } catch (fallbackErr) {
+               alert(`Fallback failed: ${fallbackErr.message}`);
+            }
         }
     };
 
@@ -885,7 +991,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
         status: 'published'
     });
     const [questions, setQuestions] = useState([
-        { question: '', options: ['', '', '', ''], answer: 0, file: null, preview: null }
+        { question: '', options: ['', '', '', ''], answer: 0 }
     ]);
     const [loading, setLoading] = useState(false);
 
@@ -899,7 +1005,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
     }, [subjects, formData.category, formData.subject]);
 
     const handleAddQuestion = () => {
-        setQuestions([...questions, { question: '', options: ['', '', '', ''], answer: 0, file: null, preview: null }]);
+        setQuestions([...questions, { question: '', options: ['', '', '', ''], answer: 0 }]);
     };
 
     const handleRemoveQuestion = (index) => {
@@ -918,29 +1024,6 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
         setQuestions(updatedQuestions);
     };
 
-    const handleFileChange = (index, file) => {
-        const updatedQuestions = [...questions];
-        updatedQuestions[index].file = file;
-        updatedQuestions[index].preview = URL.createObjectURL(file);
-        setQuestions(updatedQuestions);
-    };
-
-    const handleBulkImageUpload = (e) => {
-        const files = Array.from(e.target.files);
-        const newQuestions = files.map((file, idx) => ({
-            question: `Question ${questions.length + idx + 1}`,
-            options: ['Option A', 'Option B', 'Option C', 'Option D'],
-            answer: 0,
-            file: file,
-            preview: URL.createObjectURL(file)
-        }));
-        // If there's only one empty question, replace it. Otherwise append.
-        if (questions.length === 1 && !questions[0].question && !questions[0].file) {
-            setQuestions(newQuestions);
-        } else {
-            setQuestions([...questions, ...newQuestions]);
-        }
-    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -958,23 +1041,12 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
         // Prepare questions for backend
         // We need to keep track of which file belongs to which question
         // Backend expects 'files' array and 'manualQuestions' JSON
-        // We'll send files in order of questions that have files
-        const filesToSend = [];
         const questionsToSave = questions.map((q) => {
-            const qCopy = { ...q };
-            if (qCopy.file) {
-                filesToSend.push(qCopy.file);
-                qCopy.hasNewFile = true;
-                // We don't send the file object in the JSON
-                delete qCopy.file;
-                delete qCopy.preview;
-            }
-            return qCopy;
+            return { ...q };
         });
 
         data.append('manualQuestions', JSON.stringify(questionsToSave));
         data.append('questionsCount', questionsToSave.length);
-        filesToSend.forEach(file => data.append('files', file));
 
         try {
             const token = localStorage.getItem('token');
@@ -1015,21 +1087,12 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
         data.append('category', formData.category);
 
 
-        const filesToSend = [];
         const questionsToSave = questions.map((q) => {
-            const qCopy = { ...q };
-            if (qCopy.file) {
-                filesToSend.push(qCopy.file);
-                qCopy.hasNewFile = true;
-                delete qCopy.file;
-                delete qCopy.preview;
-            }
-            return qCopy;
+            return { ...q };
         });
 
         data.append('manualQuestions', JSON.stringify(questionsToSave));
         data.append('questionsCount', questionsToSave.length);
-        filesToSend.forEach(file => data.append('files', file));
 
         try {
             const token = localStorage.getItem('token');
@@ -1145,10 +1208,6 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
                             <div className="flex justify-between items-center">
                                 <h4 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Questions ({questions.length})</h4>
                                 <div className="flex gap-2">
-                                    <label className="cursor-pointer bg-[#C2410C]/10 text-[#C2410C] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#C2410C]/20 transition-colors flex items-center gap-2">
-                                        <Upload size={14} /> Bulk Image Upload
-                                        <input type="file" multiple accept="image/*" className="hidden" onChange={handleBulkImageUpload} />
-                                    </label>
                                     <button
                                         type="button"
                                         onClick={handleAddQuestion}
@@ -1171,36 +1230,13 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
                                         </button>
 
                                         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                                            {/* Left: Image Upload/Preview */}
-                                            <div className="md:col-span-3 flex flex-col gap-2">
-                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Question Image</label>
-                                                {q.preview ? (
-                                                    <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 group/image">
-                                                        <img src={q.preview} alt="Preview" className="w-full h-full object-cover" />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleFileChange(qIdx, null)}
-                                                            className="absolute inset-0 bg-black/40 text-white opacity-0 group-hover/image:opacity-100 flex items-center justify-center transition-opacity text-xs font-bold"
-                                                        >
-                                                            Change Image
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <label className="aspect-square rounded-lg border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#C2410C]/30 hover:bg-[#C2410C]/5 transition-all">
-                                                        <Upload size={20} className="text-slate-300" />
-                                                        <span className="text-[10px] font-bold text-slate-400">Upload Image</span>
-                                                        <input type="file" accept="image/*" className="hidden" onChange={e => handleFileChange(qIdx, e.target.files[0])} />
-                                                    </label>
-                                                )}
-                                            </div>
-
-                                            {/* Right: Text Content */}
-                                            <div className="md:col-span-9 space-y-4">
+                                            {/* Text Content */}
+                                            <div className="md:col-span-12 space-y-4">
                                                 <div>
-                                                    <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Question Text</label>
+                                                    <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Question {qIdx + 1} Text</label>
                                                     <textarea
                                                         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm h-20 resize-none font-medium"
-                                                        placeholder={`Question ${qIdx + 1} content...`}
+                                                        placeholder={`Enter question ${qIdx + 1} content...`}
                                                         value={q.question}
                                                         onChange={e => handleQuestionChange(qIdx, 'question', e.target.value)}
                                                     />
@@ -1289,16 +1325,13 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
 
     const [questions, setQuestions] = useState(
         (bank.questions || []).map((q, idx) => ({
-            ...q,
-            filename: bank.filenames?.[idx] || (idx === 0 ? bank.filename : null),
-            file: null,
-            preview: null
+            ...q
         }))
     );
     const [loading, setLoading] = useState(false);
 
     const handleAddQuestion = () => {
-        setQuestions([...questions, { question: '', options: ['', '', '', ''], answer: 0, file: null, preview: null }]);
+        setQuestions([...questions, { question: '', options: ['', '', '', ''], answer: 0 }]);
     };
 
     const handleRemoveQuestion = (index) => {
@@ -1319,27 +1352,6 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
         setQuestions(updatedQuestions);
     };
 
-    const handleFileChange = (index, file) => {
-        const updatedQuestions = [...questions];
-        updatedQuestions[index].file = file;
-        updatedQuestions[index].preview = file ? URL.createObjectURL(file) : null;
-        // If we change the file, clear the old filename
-        if (file) updatedQuestions[index].filename = null;
-        setQuestions(updatedQuestions);
-    };
-
-    const handleBulkImageUpload = (e) => {
-        const files = Array.from(e.target.files);
-        const newQuestions = files.map((file, idx) => ({
-            question: `Question ${questions.length + idx + 1}`,
-            options: ['Option A', 'Option B', 'Option C', 'Option D'],
-            answer: 0,
-            file: file,
-            preview: URL.createObjectURL(file)
-        }));
-        setQuestions([...questions, ...newQuestions]);
-    };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -1353,40 +1365,17 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
         data.append('status', formData.status);
         data.append('category', formData.category);
 
-        // Map through questions to determine what to send
-        const filesToSend = [];
         const questionsToSave = questions.map((q) => {
-            const qCopy = { ...q };
-            if (qCopy.file) {
-                filesToSend.push(qCopy.file);
-            }
-            // Backend needs to know if a question uses an existing file or a new one
-            // We'll clean up the object for JSON
-            const result = {
-                question: qCopy.question,
-                options: qCopy.options,
-                answer: qCopy.answer,
-                _id: qCopy._id // Keep ID for existing ones
+            return {
+                question: q.question,
+                options: q.options,
+                answer: q.answer,
+                _id: q._id
             };
-            if (qCopy.filename) result.filename = qCopy.filename;
-            if (qCopy.file) result.hasNewFile = true;
-
-            return result;
         });
 
-        // Backend currently expects filenames in 'updatedFilenames' and questions in 'updatedQuestions'
-        // For NEW files, it expects 'manualQuestions'.
-        // Let's simplify and just send the whole thing as 'detailedQuestions'
-        // But to keep backend compatible with existing logic, we'll try to map it.
-
-        // Actually, let's update the backend to handle a more modern 'detailedQuestions' structure
-        // Or we map here.
-
-        const existingFilenames = questionsToSave.filter(q => q.filename).map(q => q.filename);
-        data.append('updatedFilenames', JSON.stringify(existingFilenames));
         data.append('updatedQuestions', JSON.stringify(questionsToSave));
-
-        filesToSend.forEach(file => data.append('files', file));
+        data.append('updatedFilenames', JSON.stringify([]));
 
         try {
             const token = localStorage.getItem('token');
@@ -1497,10 +1486,6 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
                             <div className="flex justify-between items-center">
                                 <h4 className="font-bold text-slate-800 uppercase tracking-widest text-xs">Questions ({questions.length})</h4>
                                 <div className="flex gap-2">
-                                    <label className="cursor-pointer bg-[#C2410C]/10 text-[#C2410C] px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-[#C2410C]/20 transition-colors flex items-center gap-2">
-                                        <Upload size={14} /> Add Images
-                                        <input type="file" multiple accept="image/*" className="hidden" onChange={handleBulkImageUpload} />
-                                    </label>
                                     <button
                                         type="button"
                                         onClick={handleAddQuestion}
@@ -1523,40 +1508,13 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
                                         </button>
 
                                         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
-                                            {/* Left: Image/Preview */}
-                                            <div className="md:col-span-3 flex flex-col gap-2">
-                                                <label className="text-[10px] font-bold text-slate-400 uppercase">Question Image</label>
-                                                {q.file || q.filename ? (
-                                                    <div className="relative aspect-square rounded-lg overflow-hidden border border-slate-200 group/image">
-                                                        <img
-                                                            src={q.preview || `http://localhost:5000/uploads/${q.filename}`}
-                                                            alt="Question content"
-                                                            className="w-full h-full object-cover"
-                                                        />
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleFileChange(qIdx, null)}
-                                                            className="absolute inset-0 bg-black/40 text-white opacity-0 group-hover/image:opacity-100 flex items-center justify-center transition-opacity text-xs font-bold"
-                                                        >
-                                                            {q.filename ? 'Remove Image' : 'Change Image'}
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <label className="aspect-square rounded-lg border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-2 cursor-pointer hover:border-[#C2410C]/30 hover:bg-[#C2410C]/5 transition-all">
-                                                        <Upload size={20} className="text-slate-300" />
-                                                        <span className="text-[10px] font-bold text-slate-400">Upload Image</span>
-                                                        <input type="file" accept="image/*" className="hidden" onChange={e => handleFileChange(qIdx, e.target.files[0])} />
-                                                    </label>
-                                                )}
-                                            </div>
-
-                                            {/* Right: Text Content */}
-                                            <div className="md:col-span-9 space-y-4">
+                                            {/* Text Content */}
+                                            <div className="md:col-span-12 space-y-4">
                                                 <div>
-                                                    <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Question Text</label>
+                                                    <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Question {qIdx + 1} Text</label>
                                                     <textarea
                                                         className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm h-20 resize-none font-medium"
-                                                        placeholder="Enter question text..."
+                                                        placeholder={`Enter question ${qIdx + 1} text...`}
                                                         value={q.question}
                                                         onChange={e => handleQuestionChange(qIdx, 'question', e.target.value)}
                                                     />

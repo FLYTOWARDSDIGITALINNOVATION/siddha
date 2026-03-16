@@ -109,7 +109,7 @@ const TestPage = () => {
         } finally {
             setSubmitting(false);
         }
-    }, [id, submitting, selectedAnswers]);
+    }, [id, submitting, selectedAnswers, test?.questions]);
 
     const handleRequestReattempt = async () => {
         try {
@@ -341,78 +341,131 @@ const TestPage = () => {
                 />
             </div>
 
-            <main className="flex-1 w-full mx-auto p-0 md:p-0 pb-32 flex h-full">
-
-                {/* PDF/Image Viewer Split */}
-                {(question.filename || (test.filename && !test.filename.endsWith('.json'))) && (
-                    <div className="w-1/2 h-full border-r border-slate-200 bg-slate-100 overflow-hidden relative">
-                        {(question.filename?.endsWith('.pdf') || test.filename?.endsWith('.pdf')) ? (
-                            <iframe
-                                src={`http://localhost:5000/uploads/${question.filename || test.filename}`}
-                                className="w-full h-[calc(100vh-160px)]"
-                                title="Question Paper"
-                            />
-                        ) : (
-                            <div className="w-full h-[calc(100vh-160px)] overflow-auto p-4 flex justify-center">
-                                <img
+            <main className="flex-1 w-full mx-auto p-0 md:p-0 flex h-full overflow-hidden">
+                <div className="flex-1 flex flex-col md:flex-row pb-32 overflow-hidden h-full">
+                    {/* PDF/Image Viewer Split */}
+                    {(question.filename || (test.filename && !test.filename.endsWith('.json'))) && (
+                        <div className="w-1/2 h-full border-r border-slate-200 bg-slate-100 overflow-hidden relative">
+                            {(question.filename?.endsWith('.pdf') || test.filename?.endsWith('.pdf')) ? (
+                                <iframe
                                     src={`http://localhost:5000/uploads/${question.filename || test.filename}`}
-                                    className="max-w-full h-auto shadow-lg rounded"
-                                    alt="Question Paper"
+                                    className="w-full h-[calc(100vh-160px)]"
+                                    title="Question Paper"
                                 />
+                            ) : (
+                                <div className="w-full h-[calc(100vh-160px)] overflow-auto p-4 flex justify-center">
+                                    <img
+                                        src={`http://localhost:5000/uploads/${question.filename || test.filename}`}
+                                        className="max-w-full h-auto shadow-lg rounded"
+                                        alt="Question Paper"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    <div className={`${(question.filename || (test.filename && !test.filename.endsWith('.json'))) ? 'w-1/2' : 'max-w-5xl mx-auto'} p-6 md:p-12 overflow-y-auto h-[calc(100vh-160px)]`}>
+                        <div className="flex items-center gap-4 mb-8">
+                            <span className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-sm font-bold">
+                                Question {currentQuestion + 1} of {test.questionsCount}
+                            </span>
+                            <div className="flex-1 h-px bg-slate-100" />
+                        </div>
+
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={currentQuestion}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="space-y-8"
+                            >
+                                {/* If manual question, hide generic text or show "Refer to file" */}
+                                <h2 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 leading-tight">
+                                    {question.question.startsWith('Question') ? `Select answer for Question ${currentQuestion + 1}` : question.question}
+                                </h2>
+
+                                <div className="grid grid-cols-1 gap-4">
+                                    {question.options.map((option, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => handleOptionSelect(idx)}
+                                            className={`group flex items-center justify-between p-4 md:p-6 rounded-[1.5rem] border-2 transition-all text-left ${selectedAnswers[currentQuestion] === idx
+                                                ? 'border-[#0F172A] bg-[#0F172A]/5'
+                                                : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50'
+                                                }`}
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all ${selectedAnswers[currentQuestion] === idx
+                                                    ? 'bg-[#0F172A] text-white'
+                                                    : 'bg-slate-100 text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-900'
+                                                    }`}>
+                                                    {String.fromCharCode(65 + idx)}
+                                                </div>
+                                                <span className="text-lg font-medium text-slate-700">{option}</span>
+                                            </div>
+                                            {selectedAnswers[currentQuestion] === idx && (
+                                                <CheckCircle2 size={24} className="text-[#0F172A]" />
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </motion.div>
+                        </AnimatePresence>
+                    </div>
+                </div>
+
+                {/* Question Palette Sidebar */}
+                <aside className="hidden lg:flex w-80 bg-slate-50 border-l border-slate-200 flex-col h-[calc(100vh-160px)] shrink-0 overflow-y-auto pb-32">
+                    <div className="p-6 space-y-6">
+                        {/* Status Summary */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col items-center">
+                                <span className="w-8 h-8 bg-green-500 rounded-lg mb-2 flex items-center justify-center text-white text-xs font-bold shadow-lg shadow-green-500/20">
+                                    {Object.values(selectedAnswers).filter(v => v !== null).length}
+                                </span>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Answered</span>
                             </div>
-                        )}
-                    </div>
-                )}
+                            <div className="bg-white p-4 rounded-2xl border border-slate-200 flex flex-col items-center">
+                                <span className="w-8 h-8 bg-slate-200 rounded-lg mb-2 flex items-center justify-center text-slate-600 text-xs font-bold">
+                                    {Object.values(selectedAnswers).filter(v => v === null).length}
+                                </span>
+                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Not Visited</span>
+                            </div>
+                        </div>
 
-                <div className={`${(question.filename || (test.filename && !test.filename.endsWith('.json'))) ? 'w-1/2' : 'max-w-5xl mx-auto'} p-6 md:p-12 overflow-y-auto h-[calc(100vh-160px)]`}>
-                    <div className="flex items-center gap-4 mb-8">
-                        <span className="px-4 py-1.5 rounded-full bg-slate-900 text-white text-sm font-bold">
-                            Question {currentQuestion + 1} of {test.questionsCount}
-                        </span>
-                        <div className="flex-1 h-px bg-slate-100" />
-                    </div>
-
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={currentQuestion}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            className="space-y-8"
-                        >
-                            {/* If manual question, hide generic text or show "Refer to file" */}
-                            <h2 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 leading-tight">
-                                {question.question.startsWith('Question') ? `Select answer for Question ${currentQuestion + 1}` : question.question}
-                            </h2>
-
-                            <div className="grid grid-cols-1 gap-4">
-                                {question.options.map((option, idx) => (
+                        {/* Question Grid */}
+                        <div className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 text-center">Question Palette</h3>
+                            <div className="grid grid-cols-4 gap-2">
+                                {test.questions.map((_, idx) => (
                                     <button
                                         key={idx}
-                                        onClick={() => handleOptionSelect(idx)}
-                                        className={`group flex items-center justify-between p-4 md:p-6 rounded-[1.5rem] border-2 transition-all text-left ${selectedAnswers[currentQuestion] === idx
-                                            ? 'border-[#0F172A] bg-[#0F172A]/5'
-                                            : 'border-slate-100 bg-white hover:border-blue-200 hover:bg-slate-50'
-                                            }`}
+                                        onClick={() => setCurrentQuestion(idx)}
+                                        className={`h-10 rounded-xl text-xs font-bold transition-all border-2 flex items-center justify-center ${
+                                            currentQuestion === idx 
+                                                ? 'border-[#0F172A] scale-105 shadow-md z-10' 
+                                                : 'border-transparent'
+                                        } ${
+                                            selectedAnswers[idx] !== null
+                                                ? 'bg-green-500 text-white shadow-lg shadow-green-500/20'
+                                                : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                                        }`}
                                     >
-                                        <div className="flex items-center gap-4">
-                                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold transition-all ${selectedAnswers[currentQuestion] === idx
-                                                ? 'bg-[#0F172A] text-white'
-                                                : 'bg-slate-100 text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-900'
-                                                }`}>
-                                                {String.fromCharCode(65 + idx)}
-                                            </div>
-                                            <span className="text-lg font-medium text-slate-700">{option}</span>
-                                        </div>
-                                        {selectedAnswers[currentQuestion] === idx && (
-                                            <CheckCircle2 size={24} className="text-[#0F172A]" />
-                                        )}
+                                        {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
                                     </button>
                                 ))}
                             </div>
-                        </motion.div>
-                    </AnimatePresence>
-                </div>
+                        </div>
+
+                        <div className="p-4 bg-blue-50 rounded-2xl border border-blue-100">
+                            <h4 className="text-[10px] font-bold text-blue-900 uppercase mb-1">Tip</h4>
+                            <p className="text-[10px] text-blue-700 leading-relaxed">
+                                Click on any question number to jump directly to that question.
+                            </p>
+                        </div>
+                    </div>
+                </aside>
             </main>
 
             {/* Footer Navigation */}

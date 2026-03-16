@@ -72,17 +72,6 @@ const Home = () => {
                                 Enquire Now
                             </a>
                         </div>
-
-                        <div className="mt-12 flex items-center gap-6 justify-center md:justify-start">
-                            <div className="flex -space-x-3">
-                                {[1, 2, 3, 4].map(i => (
-                                    <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200" />
-                                ))}
-                            </div>
-                            <p className="text-sm font-medium text-slate-500">
-                                <span className="text-[#0F172A] font-bold">100+</span> Students Joined Recently
-                            </p>
-                        </div>
                     </motion.div>
                     <motion.div
                         initial={{ opacity: 0, scale: 0.8 }}

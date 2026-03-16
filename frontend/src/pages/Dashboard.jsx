@@ -103,7 +103,6 @@ const Dashboard = () => {
     { label: "Role", value: (user.role || 'Student').toUpperCase(), sub: user.course || "BSMS", icon: User, color: "text-blue-600", bg: "bg-blue-50", category: "Account" },
   ];
 
-  const activityData = Array.from({ length: 84 }, () => Math.floor(Math.random() * 4));
   // Filter by subject - show ALL tests now as requested
   const filteredExams = exams.filter(e => {
     const matchesSubject = selectedSubject === 'All Subjects' || e.subject === selectedSubject;
