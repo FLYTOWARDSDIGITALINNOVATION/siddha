@@ -49,7 +49,6 @@ const TestPreviewPage = () => {
                     </button>
                     <div>
                         <h1 className="text-xl font-serif font-bold text-slate-800">{test.title} - Preview</h1>
-                        <p className="text-xs font-medium text-blue-900 uppercase tracking-widest">{test.subject}</p>
                     </div>
                 </div>
 

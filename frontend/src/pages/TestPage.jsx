@@ -237,7 +237,7 @@ const TestPage = () => {
                         <Trophy size={64} />
                     </div>
                     <h2 className="text-4xl font-serif font-bold text-slate-900 mb-2">Test Completed!</h2>
-                    <p className="text-slate-500 mb-10 text-lg">You've successfully completed the {test.subject} assessment.</p>
+                    <p className="text-slate-500 mb-10 text-lg">You've successfully completed the assessment.</p>
 
                     <div className="grid grid-cols-2 gap-8 mb-12">
                         <div className="p-8 rounded-3xl bg-slate-50 border border-slate-100">
@@ -322,7 +322,6 @@ const TestPage = () => {
                     </button>
                     <div>
                         <h1 className="text-xl font-serif font-bold text-slate-800">{test.title}</h1>
-                        <p className="text-xs font-medium text-blue-900 uppercase tracking-widest">{test.subject}</p>
                     </div>
                 </div>
 

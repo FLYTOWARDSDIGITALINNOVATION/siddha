@@ -124,13 +124,7 @@ const AdminLayout = ({ children, activeTab, setActiveTab }) => {
                         isOpen={isSidebarOpen}
                         onClick={() => handleTabClick('Students')}
                     />
-                    <NavItem
-                        icon={<Book size={20} />}
-                        label="Subjects"
-                        active={activeTab === 'Subjects'}
-                        isOpen={isSidebarOpen}
-                        onClick={() => handleTabClick('Subjects')}
-                    />
+
                     <NavItem
                         icon={<MessageSquare size={20} />}
                         label="Requests"

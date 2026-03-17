@@ -28,7 +28,6 @@ mongoose.connect(MONGODB_URI)
     .then(() => {
         console.log('✅ Connected to MongoDB');
         createInitialAdmin();
-        initializeSubjects();
     })
     .catch(err => console.error('❌ MongoDB Connection Error:', err.message));
 
@@ -56,35 +55,7 @@ const fileFilter = (req, file, cb) => {
 
 const upload = multer({ storage, fileFilter });
 
-// --- MODELS ---
 
-const SubjectSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    category: { type: String, enum: ['MRB', 'AIAPGET'], required: true },
-    code: String
-});
-// Composite unique constraint to allow same subject name in different categories
-SubjectSchema.index({ name: 1, category: 1 }, { unique: true });
-const Subject = mongoose.model('Subject', SubjectSchema);
-
-const initializeSubjects = async () => {
-    try {
-        const count = await Subject.countDocuments();
-        if (count === 0) {
-            const defaults = ['Noi Naadal', 'Maruthuvam', 'Gunapadam', 'Sirappu Maruthuvam', 'Varma Kalai'];
-            const initialSubjects = [];
-            ['MRB', 'AIAPGET'].forEach(cat => {
-                defaults.forEach(name => {
-                    initialSubjects.push({ name, category: cat });
-                });
-            });
-            await Subject.insertMany(initialSubjects);
-            console.log('✅ Default subjects initialized for MRB and AIAPGET');
-        }
-    } catch (error) {
-        console.error('Error initializing subjects:', error);
-    }
-};
 
 // --- MODELS ---
 
@@ -103,7 +74,6 @@ const UserSchema = new mongoose.Schema({
     mobile: String,
     address: String,
     expertise: String, // Maps to bio
-    category: { type: String, enum: ['MRB', 'AIAPGET'], default: 'MRB' },
     studentId: { type: String, unique: true, sparse: true },
     // New Academic Fields
     ugCollege: String,
@@ -129,8 +99,6 @@ const AdminUser = mongoose.model('AdminUser', AdminUserSchema);
 
 const QuestionBankSchema = new mongoose.Schema({
     title: String,
-    subject: String,
-    category: { type: String, enum: ['MRB', 'AIAPGET'], default: 'MRB' },
     difficulty: String,
     filename: String,
     filenames: [String],
@@ -156,7 +124,6 @@ const AttemptSchema = new mongoose.Schema({
     testId: { type: mongoose.Schema.Types.ObjectId, ref: 'QuestionBank' },
     score: { type: Number, required: true },
     totalQuestions: Number,
-    subject: String,
     answers: [Number], // Student's selected option indices
     correctAnswers: [Number], // Correct option indices at time of attempt
     date: { type: Date, default: Date.now }
@@ -346,8 +313,8 @@ app.get('/api/admin/dashboard-stats', verifyAdmin, async (req, res) => {
         res.json({
             stats: { totalStudents, totalTests, globalAverage, activeToday },
             charts: {
-                subjectMastery: [
-                    { name: 'Noi Naadal', score: 82 }, { name: 'Gunapadam', score: 65 }, { name: 'Maruthuvam', score: 88 }
+                performanceDistribution: [
+                    { name: 'Overall Performance', score: 85 }
                 ],
                 performanceTrend: [
                     { month: 'Jan', score: 60 }, { month: 'Feb', score: 75 }
@@ -422,44 +389,37 @@ app.get('/api/admin/question-banks', verifyEducator, async (req, res) => {
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
-app.post('/api/admin/question-banks', verifyEducator, upload.array('files', 10), async (req, res) => {
+app.post('/api/admin/question-banks', verifyEducator, upload.any(), async (req, res) => {
     try {
         let questions = [];
         let questionsCount = 0;
 
-        // Process Manual Questions
         if (req.body.manualQuestions) {
             try {
                 questions = JSON.parse(req.body.manualQuestions);
 
-                // Map uploaded files to questions that expect them
-                let fileIdx = 0;
-                questions = questions.map(q => {
-                    if (q.file !== undefined || q.preview !== undefined || q.hasImage) { // Legacy or marker
-                        // ... we'll use a better marker
-                    }
-                    return q;
-                });
-
-                // Actually, the new frontend sends questions with 'file' removed but 'hasImage' or similar can be used.
-                // Let's use 'hasNewFile' as the marker.
-                questions = questions.map(q => {
-                    if (q.hasNewFile && req.files && req.files[fileIdx]) {
-                        q.filename = req.files[fileIdx].filename;
-                        fileIdx++;
-                    }
-                    delete q.hasNewFile;
-                    return q;
-                });
-
-                questionsCount = questions.length; // Fixed: Use questions.length directly after processing
+                // Map uploaded question images
+                if (req.files) {
+                    req.files.forEach(file => {
+                        if (file.fieldname === 'questionImages') {
+                            const match = file.originalname.match(/^q-(\d+)$/);
+                            if (match) {
+                                const qIdx = parseInt(match[1]);
+                                if (questions[qIdx]) {
+                                    questions[qIdx].filename = file.filename;
+                                }
+                            }
+                        }
+                    });
+                }
+                questionsCount = questions.length;
             } catch (pErr) {
                 console.error("Failed to parse manual questions:", pErr);
                 return res.status(400).json({ message: "Invalid question data format" });
             }
         }
 
-        const filenames = req.files ? req.files.map(f => f.filename) : [];
+        const filenames = req.files ? req.files.filter(f => f.fieldname === 'files').map(f => f.filename) : [];
 
         const newBank = new QuestionBank({
             ...req.body,
@@ -469,7 +429,6 @@ app.post('/api/admin/question-banks', verifyEducator, upload.array('files', 10),
             questionsCount: questionsCount || req.body.questionsCount || 0,
             negativeMarking: req.body.negativeMarking === 'true' || req.body.negativeMarking === true,
             duration: req.body.duration ? parseInt(req.body.duration) : 60,
-            category: req.body.category || 'MRB',
             status: req.body.status || 'published',
             startTime: req.body.startTime ? new Date(req.body.startTime) : null,
             endTime: req.body.endTime ? new Date(req.body.endTime) : null
@@ -536,7 +495,7 @@ app.patch('/api/admin/question-banks/:id/status', verifyEducator, async (req, re
     }
 });
 
-app.put('/api/admin/question-banks/:id', verifyEducator, upload.array('files', 100), async (req, res) => {
+app.put('/api/admin/question-banks/:id', verifyEducator, upload.any(), async (req, res) => {
     try {
         const { title, subject, difficulty } = req.body;
         const bank = await QuestionBank.findById(req.params.id);
@@ -544,7 +503,6 @@ app.put('/api/admin/question-banks/:id', verifyEducator, upload.array('files', 1
 
         // Update metadata
         if (title) bank.title = title;
-        if (subject) bank.subject = subject;
         if (difficulty) bank.difficulty = difficulty;
         if (req.body.negativeMarking !== undefined) {
             bank.negativeMarking = req.body.negativeMarking === 'true' || req.body.negativeMarking === true;
@@ -554,9 +512,6 @@ app.put('/api/admin/question-banks/:id', verifyEducator, upload.array('files', 1
         }
         if (req.body.status !== undefined) {
             bank.status = req.body.status;
-        }
-        if (req.body.category !== undefined) {
-            bank.category = req.body.category;
         }
         // Timing removed as per user request
         bank.startTime = null;
@@ -571,11 +526,10 @@ app.put('/api/admin/question-banks/:id', verifyEducator, upload.array('files', 1
             try {
                 const incomingQuestions = JSON.parse(req.body.updatedQuestions);
 
-                // Identify deleted files
-                // Existing files in the bank
-                const existingFilenames = bank.filenames || [];
-                // Filenames kept in the incoming update (excluding new files which don't have filenames yet)
-                const keptFilenames = incomingQuestions.filter(q => q.filename && !q.hasNewFile).map(q => q.filename);
+                // Existing files in the bank for deletion check
+                const existingFilenames = bank.questions.map(q => q.filename).filter(f => f);
+                // Filenames kept in the incoming update
+                const keptFilenames = incomingQuestions.map(q => q.filename).filter(f => f);
                 const filesToDelete = existingFilenames.filter(f => !keptFilenames.includes(f));
 
                 filesToDelete.forEach(filename => {
@@ -588,16 +542,20 @@ app.put('/api/admin/question-banks/:id', verifyEducator, upload.array('files', 1
                 });
 
                 // Map new files to questions
-                let fileIdx = 0;
-                finalQuestions = incomingQuestions.map(q => {
-                    if (q.hasNewFile && req.files && req.files[fileIdx]) {
-                        q.filename = req.files[fileIdx].filename;
-                        fileIdx++;
-                    }
-                    delete q.hasNewFile;
-                    return q;
-                });
-
+                if (req.files) {
+                    req.files.forEach(file => {
+                        if (file.fieldname === 'questionImages') {
+                            const match = file.originalname.match(/^q-(\d+)$/);
+                            if (match) {
+                                const qIdx = parseInt(match[1]);
+                                if (incomingQuestions[qIdx]) {
+                                    incomingQuestions[qIdx].filename = file.filename;
+                                }
+                            }
+                        }
+                    });
+                }
+                finalQuestions = incomingQuestions;
                 finalFilenames = finalQuestions.filter(q => q.filename).map(q => q.filename);
             } catch (err) {
                 console.error("Update failed logic:", err);
@@ -647,56 +605,12 @@ app.get('/api/admin/question-banks/:id/download', verifyAdmin, async (req, res) 
     }
 });
 
-// --- SUBJECTS ---
-app.get('/api/subjects', async (req, res) => {
-    try {
-        const { category } = req.query;
-        let query = {};
-        if (category) query.category = category;
-        const subjects = await Subject.find(query).sort({ name: 1 });
-        res.json(subjects);
-    } catch (err) { res.status(500).json({ message: err.message }); }
-});
 
-app.post('/api/admin/subjects', verifyAdmin, async (req, res) => {
-    try {
-        const { name, category } = req.body;
-        if (!name || !category) return res.status(400).json({ message: 'Subject name and category required' });
-
-        const exists = await Subject.findOne({ name, category });
-        if (exists) return res.status(400).json({ message: 'Subject already exists in this category' });
-
-        const newSubject = new Subject({ name, category });
-        await newSubject.save();
-        res.status(201).json(newSubject);
-    } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-app.put('/api/admin/subjects/:id', verifyAdmin, async (req, res) => {
-    try {
-        const { name, category } = req.body;
-        const subject = await Subject.findById(req.params.id);
-        if (!subject) return res.status(404).json({ message: 'Subject not found' });
-
-        if (name) subject.name = name;
-        if (category) subject.category = category;
-
-        await subject.save();
-        res.json(subject);
-    } catch (err) { res.status(500).json({ message: err.message }); }
-});
-
-app.delete('/api/admin/subjects/:id', verifyAdmin, async (req, res) => {
-    try {
-        await Subject.findByIdAndDelete(req.params.id);
-        res.json({ message: 'Subject deleted' });
-    } catch (err) { res.status(500).json({ message: err.message }); }
-});
 
 // 4. Student: Tests & Progress
 app.get('/api/user/tests', verifyToken, async (req, res) => {
     try {
-        const user = await User.findById(req.user.id);
+        const user = await User.findById(req.user.id) || await AdminUser.findById(req.user.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         const attempts = await Attempt.find({ userId: req.user.id });
@@ -705,12 +619,13 @@ app.get('/api/user/tests', verifyToken, async (req, res) => {
         const requests = await ReAttemptRequest.find({ userId: req.user.id });
 
         const tests = await QuestionBank.find({
-            status: 'published',
-            category: user.category
+            status: 'published'
         }).select('-questions.answer');
 
+        console.log(`[DEBUG] Found ${tests.length} published tests for user ${req.user.id}`);
+
         const testsWithStatus = tests.map(t => {
-            const reqForTest = requests.find(r => r.testId.toString() === t._id.toString());
+            const reqForTest = requests.find(r => r.testId && r.testId.toString() === t._id.toString());
             return {
                 ...t._doc,
                 hasAttempted: attemptedTestIds.includes(t._id.toString()),
@@ -741,7 +656,7 @@ app.get('/api/admin/reattempt-requests', verifyAdmin, async (req, res) => {
     try {
         const requests = await ReAttemptRequest.find()
             .populate('userId', 'fullName email')
-            .populate('testId', 'title subject')
+            .populate('testId', 'title')
             .sort({ createdAt: -1 });
         res.json(requests);
     } catch (err) { res.status(500).json({ message: err.message }); }
@@ -772,7 +687,7 @@ app.post('/api/user/reviews', verifyToken, async (req, res) => {
         const review = new Review({
             userId: user._id,
             name: user.fullName,
-            role: user.expertise || (user.category === 'MRB' ? 'MRB Aspirant' : 'AIAPGET Aspirant'),
+            role: user.expertise || 'Scholar',
             text,
             rating,
             image: "https://images.unsplash.com/photo-1559839734-2b71f1e9cbee?auto=format&fit=crop&q=80&w=200&h=200", // Default image or user image if available
@@ -867,7 +782,6 @@ app.post('/api/user/tests/:id/submit', verifyToken, async (req, res) => {
             testId: test._id,
             score: parseFloat(percentage),
             totalQuestions: test.questions.length,
-            subject: test.subject,
             answers: answers,
             correctAnswers: test.questions.map(q => q.answer)
         });
@@ -927,10 +841,19 @@ app.get('/api/user/progress', verifyToken, async (req, res) => {
             improvement = (attempts[attempts.length - 1].score - attempts[attempts.length - 2].score).toFixed(1);
         }
 
-        // Aggregate Subject Mastery
+        // Aggregate Assessment Mastery (Grouping by Test Title)
         const subjectStats = await Attempt.aggregate([
             { $match: { userId: new mongoose.Types.ObjectId(req.user.id) } },
-            { $group: { _id: "$subject", avg: { $avg: "$score" } } }
+            { 
+                $lookup: {
+                    from: 'questionbanks',
+                    localField: 'testId',
+                    foreignField: '_id',
+                    as: 'testInfo'
+                }
+            },
+            { $unwind: '$testInfo' },
+            { $group: { _id: "$testInfo.title", avg: { $avg: "$score" } } }
         ]);
 
         res.json({
@@ -939,8 +862,8 @@ app.get('/api/user/progress', verifyToken, async (req, res) => {
                     date: new Date(a.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
                     score: a.score
                 })),
-                stats: { avgScore, improvement, totalTests: attempts.length, rank: "Level 1" },
-                subjectMastery: subjectStats.map(s => ({ subject: s._id, A: s.avg, fullMark: 100 }))
+                stats: { avgScore, improvement, totalTests: attempts.length, rank: "Assessment Tier 1" },
+                performanceData: subjectStats.map(s => ({ title: s._id, score: s.avg, fullMark: 100 }))
             }
         });
     } catch (err) { res.status(500).json({ message: err.message }); }
@@ -949,8 +872,8 @@ app.get('/api/user/progress', verifyToken, async (req, res) => {
 // 5. Submit Test Result (Mocking an exam finish)
 app.post('/api/user/submit-test', verifyToken, async (req, res) => {
     try {
-        const { score, subject, testId } = req.body;
-        const newAttempt = new Attempt({ userId: req.user.id, score, subject, testId });
+        const { score, testId } = req.body;
+        const newAttempt = new Attempt({ userId: req.user.id, score, testId });
         await newAttempt.save();
         res.json({ message: "Score saved successfully" });
     } catch (err) { res.status(500).json({ message: err.message }); }

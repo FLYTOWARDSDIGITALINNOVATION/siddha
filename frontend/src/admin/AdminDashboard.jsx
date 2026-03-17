@@ -19,17 +19,12 @@ const AdminDashboard = () => {
         globalAverage: 0,
         activeToday: 0
     });
-    const [chartData, setChartData] = useState({ subjectMastery: [], performanceTrend: [] });
+    const [chartData, setChartData] = useState({ performanceDistribution: [], performanceTrend: [] });
     const [users, setUsers] = useState([]);
     const [questionBanks, setQuestionBanks] = useState([]);
-    const [subjects, setSubjects] = useState([]);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [editingBank, setEditingBank] = useState(null);
-    const [selectedCategory, setSelectedCategory] = useState('MRB'); // For filtering Question Vault
-    const [newSubject, setNewSubject] = useState('');
-    const [newSubjectCategory, setNewSubjectCategory] = useState('MRB');
     const [selectedStudent, setSelectedStudent] = useState(null);
-    const [editingSubject, setEditingSubject] = useState(null); // { _id, name }
     const [reattemptRequests, setReattemptRequests] = useState([]);
     const [pendingRegistrations, setPendingRegistrations] = useState([]);
     const [requestType, setRequestType] = useState('registration'); // 'registration' or 'reattempt'
@@ -47,49 +42,7 @@ const AdminDashboard = () => {
 
     // ... handleDelete ...
 
-    const handleAddSubject = async () => {
-        if (!newSubject.trim()) return;
-        try {
-            const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5000/api/admin/subjects', {
-                name: newSubject,
-                category: newSubjectCategory
-            }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setNewSubject('');
-            fetchAllData();
-        } catch (err) {
-            alert(err.response?.data?.message || 'Failed to add subject');
-        }
-    };
 
-    const handleDeleteSubject = async (id) => {
-        if (!window.confirm("Delete this subject? Associated questions might lose their category.")) return;
-        try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/admin/subjects/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            fetchAllData();
-        } catch (err) {
-            alert('Failed to delete subject');
-        }
-    };
-
-    const requestUpdateSubject = async (id, newName) => {
-        if (!newName.trim()) return;
-        try {
-            const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/admin/subjects/${id}`, { name: newName }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            setEditingSubject(null);
-            fetchAllData();
-        } catch (err) {
-            alert('Failed to update subject: ' + (err.response?.data?.message || err.message));
-        }
-    };
 
 
     const fetchAllData = useCallback(async () => {
@@ -106,9 +59,6 @@ const AdminDashboard = () => {
 
             const qbResponse = await axios.get('http://localhost:5000/api/admin/question-banks', config);
             setQuestionBanks(qbResponse.data);
-
-            const subResponse = await axios.get('http://localhost:5000/api/subjects');
-            setSubjects(subResponse.data);
 
             const reRes = await axios.get('http://localhost:5000/api/admin/reattempt-requests', config);
             setReattemptRequests(reRes.data);
@@ -278,8 +228,7 @@ const AdminDashboard = () => {
             doc.text(bank.title || 'Question Bank', 14, 22);
             doc.setFontSize(11);
             doc.setTextColor(100);
-            doc.text(`Subject: ${bank.subject || 'N/A'} | Category: ${bank.category || 'N/A'}`, 14, 30);
-            doc.text(`Difficulty: ${bank.difficulty || 'N/A'} | Total Questions: ${questionData.length}`, 14, 36);
+            doc.text(`Difficulty: ${bank.difficulty || 'N/A'} | Total Questions: ${questionData.length}`, 14, 30);
             
             doc.setDrawColor(200);
             doc.line(14, 40, 196, 40);
@@ -416,12 +365,7 @@ const AdminDashboard = () => {
                                 <p className="text-slate-500">Manage student requests for test re-takes</p>
                             </>
                         )}
-                        {activeTab === 'Subjects' && (
-                            <>
-                                <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Subject Management</h2>
-                                <p className="text-slate-500">Organize and categorize your curriculum</p>
-                            </>
-                        )}
+
                         {activeTab === 'Approvals' && (
                             <>
                                 <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Registration Approvals</h2>
@@ -462,11 +406,11 @@ const AdminDashboard = () => {
 
                         {/* Charts */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                            <div>
-                                <h3 className="text-xl font-serif font-bold text-gray-800 mb-6">Subject Mastery</h3>
+                             <div>
+                                <h3 className="text-xl font-serif font-bold text-gray-800 mb-6">Performance Distribution</h3>
                                 <div className="h-64">
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={chartData.subjectMastery} barSize={40}>
+                                        <BarChart data={chartData.performanceDistribution} barSize={40}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                             <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} />
                                             <YAxis />
@@ -483,7 +427,7 @@ const AdminDashboard = () => {
                                         <LineChart data={chartData.performanceTrend}>
                                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                             <XAxis dataKey="month" />
-                                            <YAxis domain={[60, 90]} />
+                                            <YAxis />
                                             <Tooltip />
                                             <Line type="monotone" dataKey="score" stroke="#C2410C" strokeWidth={3} dot={{ r: 4 }} />
                                         </LineChart>
@@ -498,34 +442,19 @@ const AdminDashboard = () => {
                 {activeTab === 'Question Vault' && (
                     <div>
                         <div className="mb-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
-                            <div className="flex bg-slate-100 p-1 rounded-xl">
-                                {['MRB', 'AIAPGET'].map(cat => (
-                                    <button
-                                        key={cat}
-                                        onClick={() => setSelectedCategory(cat)}
-                                        className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${selectedCategory === cat ? 'bg-white text-[#C2410C] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                    >
-                                        {cat} Questions
-                                    </button>
-                                ))}
-                            </div>
                             <div className="relative w-full md:w-96">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <input
                                     type="text"
-                                    placeholder={`Search ${selectedCategory} question banks...`}
+                                    placeholder={`Search question banks...`}
                                     className="pl-10 pr-4 py-2 w-full rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-sm"
                                 />
                             </div>
                         </div>
 
                         <div className="space-y-6">
-                            {questionBanks
-                                .filter(b => b.category === selectedCategory)
-                                .length > 0 ?
-                                questionBanks
-                                    .filter(b => b.category === selectedCategory)
-                                    .map((bank) => (
+                            {questionBanks.length > 0 ?
+                                questionBanks.map((bank) => (
                                         <div key={bank._id || bank.id} className="bg-white p-6 rounded-xl border border-slate-100 flex justify-between items-center hover:shadow-sm transition-shadow">
                                             <div>
                                                 <div className="flex items-center gap-3 mb-1">
@@ -562,7 +491,7 @@ const AdminDashboard = () => {
                                         </div>
                                     )) : (
                                     <div className="text-center py-10 text-slate-400">
-                                        No question banks found for {selectedSubject}.
+                                        No question banks found.
                                     </div>
                                 )}
                         </div>
@@ -832,86 +761,7 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 )}
-                {/* CONTENT: SUBJECTS */}
-                {
-                    activeTab === 'Subjects' && (
-                        <div className="bg-white p-8 rounded-2xl border border-slate-100 shadow-sm animate-in fade-in slide-in-from-bottom-4">
-                            <div className="mb-8 flex flex-wrap gap-4 items-end">
-                                <div className="flex-1 min-w-[300px]">
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Subject Name</label>
-                                    <input
-                                        type="text"
-                                        placeholder="Enter subject name (e.g., Varma Kalai)"
-                                        value={newSubject}
-                                        onChange={(e) => setNewSubject(e.target.value)}
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Category</label>
-                                    <select
-                                        value={newSubjectCategory}
-                                        onChange={(e) => setNewSubjectCategory(e.target.value)}
-                                        className="px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 bg-white"
-                                    >
-                                        <option value="MRB">MRB</option>
-                                        <option value="AIAPGET">AIAPGET</option>
-                                    </select>
-                                </div>
-                                <button
-                                    onClick={handleAddSubject}
-                                    disabled={!newSubject.trim()}
-                                    className="bg-[#C2410C] hover:bg-[#9a3412] text-white px-8 py-3 rounded-xl font-bold transition-all disabled:opacity-50 h-[50px]"
-                                >
-                                    <Upload size={20} className="inline mr-2" /> Add Subject
-                                </button>
-                            </div>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {subjects.map((sub) => (
-                                    <div key={sub._id} className="bg-slate-50 p-4 rounded-xl border border-slate-200 flex justify-between items-center group hover:bg-white hover:shadow-md transition-all">
-                                        {editingSubject?._id === sub._id ? (
-                                            <div className="flex flex-1 gap-2">
-                                                <input
-                                                    type="text"
-                                                    className="flex-1 px-2 py-1 bg-white border border-gray-300 rounded text-sm"
-                                                    value={editingSubject.name}
-                                                    onChange={(e) => setEditingSubject({ ...editingSubject, name: e.target.value })}
-                                                />
-                                                <button onClick={() => requestUpdateSubject(sub._id, editingSubject.name)} className="text-green-600 hover:bg-green-100 p-1 rounded"><Check size={16} /></button>
-                                                <button onClick={() => setEditingSubject(null)} className="text-red-500 hover:bg-red-100 p-1 rounded"><X size={16} /></button>
-                                            </div>
-                                        ) : (
-                                            <>
-                                                <div className="flex flex-col">
-                                                    <span className="font-bold text-slate-800">{sub.name}</span>
-                                                    <span className="text-[10px] font-bold text-teal-600 uppercase tracking-tight">{sub.category}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button
-                                                        onClick={() => setEditingSubject(sub)}
-                                                        className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded-lg transition-colors"
-                                                    >
-                                                        <Edit size={16} />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteSubject(sub._id)}
-                                                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                            {subjects.length === 0 && (
-                                <div className="text-center py-12 text-slate-400">No subjects found. Add one to get started.</div>
-                            )}
-                        </div>
-                    )
-                }
 
 
 
@@ -922,7 +772,6 @@ const AdminDashboard = () => {
                             onClose={() => setIsUploadModalOpen(false)}
                             onSuccess={handleUploadSuccess}
                             onAuthError={handleLogout}
-                            subjects={subjects}
                         />
                     )
                 }
@@ -932,7 +781,6 @@ const AdminDashboard = () => {
                             bank={editingBank}
                             onClose={() => setEditingBank(null)}
                             onSuccess={handleUploadSuccess}
-                            subjects={subjects}
                         />
                     )
                 }
@@ -958,12 +806,10 @@ const OverviewCard = ({ icon, value, label }) => (
     </div>
 );
 
-const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
+const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
     const [formData, setFormData] = useState({
         title: '',
-        subject: 'Noi Naadal',
         difficulty: 'Easy',
-        category: 'MRB',
         negativeMarking: false,
         duration: 60,
         status: 'published'
@@ -973,17 +819,10 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
     ]);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        if (subjects.length > 0) {
-            const firstSub = subjects.find(s => s.category === formData.category);
-            if (firstSub && !formData.subject) {
-                setFormData(prev => ({ ...prev, subject: firstSub.name }));
-            }
-        }
-    }, [subjects, formData.category, formData.subject]);
+
 
     const handleAddQuestion = () => {
-        setQuestions([...questions, { question: '', options: ['', '', '', ''], answer: 0 }]);
+        setQuestions([...questions, { question: '', options: ['', '', '', ''], answer: 0, image: null, imagePreview: null }]);
     };
 
     const handleRemoveQuestion = (index) => {
@@ -996,6 +835,10 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
         if (field === 'options') {
             const { optIdx, val } = value;
             updatedQuestions[index].options[optIdx] = val;
+        } else if (field === 'image') {
+            const file = value;
+            updatedQuestions[index].image = file;
+            updatedQuestions[index].imagePreview = file ? URL.createObjectURL(file) : null;
         } else {
             updatedQuestions[index][field] = value;
         }
@@ -1010,17 +853,21 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
         setLoading(true);
         const data = new FormData();
         data.append('title', formData.title);
-        data.append('subject', formData.subject);
-        data.append('difficulty', formData.difficulty);
-        data.append('negativeMarking', formData.negativeMarking);
         data.append('duration', formData.duration);
         data.append('status', formData.status);
 
         // Prepare questions for backend
         // We need to keep track of which file belongs to which question
         // Backend expects 'files' array and 'manualQuestions' JSON
-        const questionsToSave = questions.map((q) => {
-            return { ...q };
+        const questionsToSave = questions.map((q, index) => {
+            if (q.image) {
+                data.append('questionImages', q.image, `q-${index}`);
+            }
+            return {
+                question: q.question,
+                options: q.options,
+                answer: q.answer
+            };
         });
 
         data.append('manualQuestions', JSON.stringify(questionsToSave));
@@ -1057,16 +904,19 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
         setLoading(true);
         const data = new FormData();
         data.append('title', formData.title);
-        data.append('subject', formData.subject);
-        data.append('difficulty', formData.difficulty);
-        data.append('negativeMarking', formData.negativeMarking);
         data.append('duration', formData.duration);
         data.append('status', updatedStatus);
-        data.append('category', formData.category);
 
 
-        const questionsToSave = questions.map((q) => {
-            return { ...q };
+        const questionsToSave = questions.map((q, index) => {
+            if (q.image) {
+                data.append('questionImages', q.image, `q-${index}`);
+            }
+            return {
+                question: q.question,
+                options: q.options,
+                answer: q.answer
+            };
         });
 
         data.append('manualQuestions', JSON.stringify(questionsToSave));
@@ -1103,7 +953,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
 
                 <div className="flex-1 overflow-y-auto p-6">
                     <form id="upload-form" onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
                             <div className="md:col-span-2">
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Title</label>
                                 <input
@@ -1114,33 +964,6 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
                                 />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Category</label>
-                                <select
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
-                                    value={formData.category}
-                                    onChange={e => setFormData({ ...formData, category: e.target.value, subject: subjects.find(s => s.category === e.target.value)?.name || '' })}
-                                >
-                                    <option value="MRB">MRB</option>
-                                    <option value="AIAPGET">AIAPGET</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
-                                <select
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
-                                    value={formData.subject}
-                                    onChange={e => setFormData({ ...formData, subject: e.target.value })}
-                                >
-                                    {subjects.filter(s => s.category === formData.category).length > 0 ? (
-                                        subjects.filter(s => s.category === formData.category).map((sub, i) => (
-                                            <option key={i} value={sub.name}>{sub.name}</option>
-                                        ))
-                                    ) : (
-                                        <option value="">No subjects found</option>
-                                    )}
-                                </select>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Difficulty</label>
@@ -1291,11 +1114,9 @@ const UploadModal = ({ onClose, onSuccess, onAuthError, subjects = [] }) => {
     );
 };
 
-const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
+const EditModal = ({ bank, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
         title: bank.title,
-        subject: bank.subject,
-        category: bank.category || 'MRB',
         difficulty: bank.difficulty || 'Easy',
         duration: bank.duration || 60,
         status: bank.status || 'published'
@@ -1303,7 +1124,8 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
 
     const [questions, setQuestions] = useState(
         (bank.questions || []).map((q, idx) => ({
-            ...q
+            ...q,
+            imagePreview: q.filename ? `http://localhost:5000/uploads/${q.filename}` : null
         }))
     );
     const [loading, setLoading] = useState(false);
@@ -1324,6 +1146,10 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
         if (field === 'options') {
             const { optIdx, val } = value;
             updatedQuestions[index].options[optIdx] = val;
+        } else if (field === 'image') {
+            const file = value;
+            updatedQuestions[index].image = file;
+            updatedQuestions[index].imagePreview = file ? URL.createObjectURL(file) : null;
         } else {
             updatedQuestions[index][field] = value;
         }
@@ -1336,18 +1162,19 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
 
         const data = new FormData();
         data.append('title', formData.title);
-        data.append('subject', formData.subject);
-        data.append('difficulty', formData.difficulty);
-        data.append('negativeMarking', formData.negativeMarking);
         data.append('duration', formData.duration);
         data.append('status', formData.status);
-        data.append('category', formData.category);
 
-        const questionsToSave = questions.map((q) => {
+        const questionsToSave = questions.map((q, index) => {
+            if (q.image) {
+                // We use a prefix to identify which question this image belongs to
+                data.append('questionImages', q.image, `q-${index}`);
+            }
             return {
                 question: q.question,
                 options: q.options,
                 answer: q.answer,
+                filename: q.filename, // Keep existing filename if not changed
                 _id: q._id
             };
         });
@@ -1382,8 +1209,8 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
 
                 <div className="flex-1 overflow-y-auto p-6">
                     <form id="edit-form" onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <div className="md:col-span-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div className="md:col-span-1">
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Title</label>
                                 <input
                                     required
@@ -1392,33 +1219,6 @@ const EditModal = ({ bank, onClose, onSuccess, subjects = [] }) => {
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
                                 />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Category</label>
-                                <select
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
-                                    value={formData.category}
-                                    onChange={e => setFormData({ ...formData, category: e.target.value, subject: subjects.find(s => s.category === e.target.value)?.name || formData.subject })}
-                                >
-                                    <option value="MRB">MRB</option>
-                                    <option value="AIAPGET">AIAPGET</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Subject</label>
-                                <select
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
-                                    value={formData.subject}
-                                    onChange={e => setFormData({ ...formData, subject: e.target.value })}
-                                >
-                                    {subjects.filter(s => s.category === formData.category).length > 0 ? (
-                                        subjects.filter(s => s.category === formData.category).map(s => (
-                                            <option key={s._id || s.name} value={s.name}>{s.name}</option>
-                                        ))
-                                    ) : (
-                                        <option value="">No subjects found</option>
-                                    )}
-                                </select>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Difficulty</label>

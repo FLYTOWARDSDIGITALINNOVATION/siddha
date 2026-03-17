@@ -13,45 +13,17 @@ const CreateTest = () => {
     const [formData, setFormData] = useState({
         topic: '',
         questionCount: '',
-        category: 'MRB',
         negativeMarking: false
     });
     const [questions, setQuestions] = useState([]);
-    const [subjects, setSubjects] = useState([]);
 
-    React.useEffect(() => {
-        const fetchSubjects = async () => {
-            try {
-                const res = await axios.get('http://localhost:5000/api/subjects');
-                setSubjects(res.data);
-                // Set default topic if subjects are available
-                if (res.data.length > 0) {
-                    const firstSubject = res.data.find(s => s.category === formData.category) || res.data[0];
-                    setFormData(prev => ({ ...prev, topic: firstSubject.name }));
-                }
-            } catch (err) {
-                console.error("Failed to fetch subjects", err);
-            }
-        };
-        fetchSubjects();
-    }, [formData.category]);
 
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target;
-
-        if (name === 'category') {
-            const firstSubject = subjects.find(s => s.category === value);
-            setFormData(prev => ({
-                ...prev,
-                category: value,
-                topic: firstSubject ? firstSubject.name : prev.topic
-            }));
-        } else {
-            setFormData(prev => ({
-                ...prev,
-                [name]: type === 'checkbox' ? checked : value
-            }));
-        }
+        setFormData(prev => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
     };
 
     const handleQuestionChange = (index, field, value) => {
@@ -108,9 +80,7 @@ const CreateTest = () => {
         try {
             const token = localStorage.getItem('token');
             const payload = {
-                title: `${formData.topic} Assessment`,
-                subject: formData.topic,
-                category: formData.category,
+                title: formData.topic || "Untitled Assessment",
                 difficulty: 'Medium',
                 negativeMarking: formData.negativeMarking,
                 questionsCount: questions.length,
@@ -161,9 +131,9 @@ const CreateTest = () => {
                     {step === 1 ? (
                         <div className="space-y-6">
                             <Input
-                                label="Subject of Siddha"
+                                label="Test Topic / Title"
                                 name="topic"
-                                placeholder="e.g. Noi Naadal"
+                                placeholder="e.g. Annual Final Exam"
                                 icon={BookOpen}
                                 value={formData.topic}
                                 onChange={handleChange}
@@ -183,18 +153,7 @@ const CreateTest = () => {
                                 max="50"
                             />
 
-                            <div className="space-y-1">
-                                <label className="block text-sm font-semibold text-gray-700 ml-1">Test Category</label>
-                                <select
-                                    name="category"
-                                    value={formData.category}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0F172A]/20 bg-white font-medium"
-                                >
-                                    <option value="MRB">MRB</option>
-                                    <option value="AIAPGET">AIAPGET</option>
-                                </select>
-                            </div>
+
 
                             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100">
                                 <div className="flex items-center gap-3">

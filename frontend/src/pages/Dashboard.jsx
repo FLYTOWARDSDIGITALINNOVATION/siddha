@@ -26,20 +26,27 @@ const Dashboard = () => {
           return;
         }
 
-        const config = { headers: { Authorization: `Bearer ${token}` } };
+        const headers = { Authorization: `Bearer ${token}` };
 
         // Fetch user profile
-        const userRes = await fetch('http://localhost:5000/api/user/profile', config);
+        const userRes = await fetch('http://localhost:5000/api/user/profile', { headers });
         if (userRes.ok) {
           const userData = await userRes.json();
           setUser(userData);
+        } else {
+          console.warn('Profile fetch failed:', userRes.status);
         }
 
         // Fetch tests
-        const testsRes = await fetch('http://localhost:5000/api/user/tests', config);
+        const testsRes = await fetch('http://localhost:5000/api/user/tests', { headers });
+        console.log('Tests API status:', testsRes.status);
         if (testsRes.ok) {
           const testsData = await testsRes.json();
-          setExams(testsData);
+          console.log('Tests loaded:', testsData.length);
+          setExams(Array.isArray(testsData) ? testsData : []);
+        } else {
+          const errData = await testsRes.json().catch(() => ({}));
+          console.error('Tests fetch failed:', testsRes.status, errData);
         }
 
       } catch (err) {
@@ -51,6 +58,7 @@ const Dashboard = () => {
 
     fetchData();
   }, [navigate]);
+
 
   const handleTestClick = (exam) => {
     if (exam.hasAttempted && exam.requestStatus !== 'approved') {
@@ -206,6 +214,13 @@ const Dashboard = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <AnimatePresence mode='popLayout'>
+              {filteredExams.length === 0 && !loading && (
+                <div className="col-span-2 text-center py-16 text-gray-400">
+                  <BookOpen size={48} className="mx-auto mb-4 opacity-30" />
+                  <p className="text-lg font-semibold">No active tests available right now.</p>
+                  <p className="text-sm mt-1">Check back later for new assessments.</p>
+                </div>
+              )}
               {filteredExams.map((exam) => (
                 <motion.div
                   layout

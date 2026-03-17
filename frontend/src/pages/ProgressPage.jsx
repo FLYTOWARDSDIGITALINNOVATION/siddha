@@ -133,13 +133,13 @@ const ProgressPage = () => {
 
           {/* Radar Chart */}
           <div className="bg-white p-8 rounded-[2rem] shadow-xl shadow-slate-200/50 border border-slate-50">
-            <h3 className="text-xl font-serif font-bold mb-6 text-slate-800">Subject Mastery</h3>
+            <h3 className="text-xl font-serif font-bold mb-6 text-slate-800">Learning Profile</h3>
             <div className="h-60 md:h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data.subjectMastery}>
+                <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data.performanceData}>
                   <PolarGrid stroke="#E2E8F0" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#64748B', fontSize: 9 }} />
-                  <Radar name="Proficiency" dataKey="A" stroke="#C2410C" fill="#C2410C" fillOpacity={0.6} />
+                  <PolarAngleAxis dataKey="title" tick={{ fill: '#64748B', fontSize: 9 }} />
+                  <Radar name="Proficiency" dataKey="score" stroke="#C2410C" fill="#C2410C" fillOpacity={0.6} />
                 </RadarChart>
               </ResponsiveContainer>
             </div>
@@ -152,14 +152,14 @@ const ProgressPage = () => {
             </h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <InsightItem
-                title="Focus Priority"
-                subject={data.subjectMastery.sort((a, b) => a.A - b.A)[0]?.subject || "Pharmacology"}
-                desc="This is currently your lowest scoring area based on recent activity."
+                title="Focus Area"
+                subject={data.performanceData.sort((a, b) => a.score - b.score)[0]?.title || "Initial Topics"}
+                desc="Current analysis suggests prioritizing this topic for improvement."
               />
               <InsightItem
                 title="Next Milestone"
-                subject="Gold Scholar Rank"
-                desc={`You are only ${85 - data.stats.avgScore}% away from the next tier.`}
+                subject="Advanced Scholar"
+                desc={`You are only ${85 - data.stats.avgScore}% away from achieving the next status level.`}
               />
             </div>
           </div>
