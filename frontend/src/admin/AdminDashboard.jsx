@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    TrendingUp, Calendar, FileText, ChevronDown, Trash2, Edit, Download, Upload, X, Check, Search, Users, Star
+    TrendingUp, Calendar, FileText, Trash2, Edit, Download, Upload, X, Check, Search, Users, Star
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCallback } from 'react';
@@ -25,7 +25,6 @@ const AdminDashboard = () => {
     const [subjects, setSubjects] = useState([]);
     const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
     const [editingBank, setEditingBank] = useState(null);
-    const [selectedSubject, setSelectedSubject] = useState('All Subjects');
     const [selectedCategory, setSelectedCategory] = useState('MRB'); // For filtering Question Vault
     const [newSubject, setNewSubject] = useState('');
     const [newSubjectCategory, setNewSubjectCategory] = useState('MRB');
@@ -446,23 +445,6 @@ const AdminDashboard = () => {
                                 <Upload size={16} /> Upload New
                             </button>
                         )}
-                        <div className="relative w-full sm:w-48 bg-white border border-slate-200 rounded-xl overflow-hidden">
-                            <select
-                                value={selectedSubject}
-                                onChange={(e) => setSelectedSubject(e.target.value)}
-                                className="w-full px-4 py-2.5 text-sm font-semibold text-gray-700 bg-transparent appearance-none focus:outline-none cursor-pointer"
-                            >
-                                <option>All Subjects</option>
-                                {subjects.length > 0 ? subjects.map(s => (
-                                    <option key={s._id || s.name} value={s.name}>{s.name}</option>
-                                )) : (
-                                    ['Noi Naadal', 'Maruthuvam', 'Gunapadam', 'Sirappu Maruthuvam', 'Varma Kalai'].map(s => (
-                                        <option key={s} value={s}>{s}</option>
-                                    ))
-                                )}
-                            </select>
-                            <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500" />
-                        </div>
                         {/* Tab buttons removed as they are now in the sidebar */}
                     </div>
                 </header>
@@ -540,11 +522,9 @@ const AdminDashboard = () => {
                         <div className="space-y-6">
                             {questionBanks
                                 .filter(b => b.category === selectedCategory)
-                                .filter(b => selectedSubject === 'All Subjects' || b.subject === selectedSubject)
                                 .length > 0 ?
                                 questionBanks
                                     .filter(b => b.category === selectedCategory)
-                                    .filter(b => selectedSubject === 'All Subjects' || b.subject === selectedSubject)
                                     .map((bank) => (
                                         <div key={bank._id || bank.id} className="bg-white p-6 rounded-xl border border-slate-100 flex justify-between items-center hover:shadow-sm transition-shadow">
                                             <div>
@@ -555,7 +535,6 @@ const AdminDashboard = () => {
                                                         {bank.difficulty}
                                                     </span>
                                                 </div>
-                                                <p className="text-sm font-semibold text-teal-600 mb-3">{bank.subject}</p>
                                                 <div className="flex items-center gap-6 text-xs text-slate-500 font-medium">
                                                     <span>{bank.questionsCount || bank.questions} questions</span>
                                                     <span>Uploaded {new Date(bank.createdAt || bank.uploaded).toLocaleDateString()}</span>
@@ -744,7 +723,6 @@ const AdminDashboard = () => {
                                                     </td>
                                                     <td className="px-6 py-4">
                                                         <p className="font-medium text-slate-700">{req.testId?.title}</p>
-                                                        <p className="text-[10px] text-teal-600 font-bold">{req.testId?.subject}</p>
                                                     </td>
                                                     <td className="px-6 py-4 text-slate-500">{new Date(req.createdAt).toLocaleDateString()}</td>
                                                     <td className="px-6 py-4 text-right flex justify-end gap-2">

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Save, Hash, AlertTriangle, Wand2, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Hash, AlertTriangle, Wand2, Check, Loader2, BookOpen } from 'lucide-react';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import axios from 'axios';
@@ -160,23 +160,15 @@ const CreateTest = () => {
 
                     {step === 1 ? (
                         <div className="space-y-6">
-                            <div className="space-y-1">
-                                <label className="block text-sm font-semibold text-gray-700 ml-1">Subject of Siddha</label>
-                                <select
-                                    name="topic"
-                                    value={formData.topic}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#0F172A]/20 bg-white font-medium"
-                                >
-                                    {subjects.filter(s => s.category === formData.category).length > 0 ? (
-                                        subjects.filter(s => s.category === formData.category).map((s, idx) => (
-                                            <option key={idx} value={s.name}>{s.name}</option>
-                                        ))
-                                    ) : (
-                                        <option value="">No subjects found</option>
-                                    )}
-                                </select>
-                            </div>
+                            <Input
+                                label="Subject of Siddha"
+                                name="topic"
+                                placeholder="e.g. Noi Naadal"
+                                icon={BookOpen}
+                                value={formData.topic}
+                                onChange={handleChange}
+                                required
+                            />
 
                             <Input
                                 label="Number of Questions"

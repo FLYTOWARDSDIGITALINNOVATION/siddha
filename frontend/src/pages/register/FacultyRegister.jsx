@@ -69,11 +69,11 @@ const FacultyRegister = () => {
                     <div className="space-y-4">
                         <h3 className="text-2xl font-serif font-black text-black mb-6">Personal Details</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <Input label="Full Name" name="fullName" placeholder="Dr. Jane Smith" onChange={handleChange} />
+                            <Input label="Full Name" name="fullName" placeholder="Dr. Jane Smith" onChange={handleChange} required />
                             <Select label="Gender" name="gender" options={["Male", "Female", "Other"]} onChange={handleChange} />
-                            <Input label="Date of Birth" name="dob" type="date" onChange={handleChange} />
-                            <Input label="Age" name="age" type="number" placeholder="35" onChange={handleChange} />
-                            <Input label="Faculty ID (Auto/Manual)" name="facultyId" placeholder="FAC-2024-001" onChange={handleChange} />
+                            <Input label="Date of Birth" name="dob" type="date" onChange={handleChange} required />
+                            <Input label="Age" name="age" type="number" placeholder="35" onChange={handleChange} required />
+                            <Input label="Faculty ID (Auto/Manual)" name="facultyId" placeholder="FAC-2024-001" onChange={handleChange} required />
                         </div>
                     </div>
                 );
@@ -240,7 +240,7 @@ const FacultyRegister = () => {
                     )}
 
                     {currentStep < steps.length ? (
-                        <Button onClick={nextStep} className="flex-1 !bg-black hover:!bg-gray-800 !text-white !font-black !shadow-lg">
+                        <Button type="submit" className="flex-1 !bg-black hover:!bg-gray-800 !text-white !font-black !shadow-lg">
                             Next <ChevronRight size={20} />
                         </Button>
                     ) : (

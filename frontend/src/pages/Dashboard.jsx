@@ -3,15 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, User, Award, Flame, Clock,
-  Calendar, ChevronDown, FileText, ArrowRight
+  Calendar, FileText, ArrowRight
 } from 'lucide-react';
 import DashboardLayout from '../components/Layout/DashboardLayout';
 
 const Dashboard = () => {
-  const [selectedSubject, setSelectedSubject] = useState('All Subjects');
   const [user, setUser] = useState({ fullName: "Scholar", role: "student" });
   const [exams, setExams] = useState([]);
-  const [subjects, setSubjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   // State for re-attempt modal
@@ -42,13 +40,6 @@ const Dashboard = () => {
         if (testsRes.ok) {
           const testsData = await testsRes.json();
           setExams(testsData);
-        }
-
-        // Fetch subjects
-        const subRes = await fetch('http://localhost:5000/api/subjects');
-        if (subRes.ok) {
-          const subData = await subRes.json();
-          setSubjects(subData);
         }
 
       } catch (err) {
@@ -104,10 +95,7 @@ const Dashboard = () => {
   ];
 
   // Filter by subject - show ALL tests now as requested
-  const filteredExams = exams.filter(e => {
-    const matchesSubject = selectedSubject === 'All Subjects' || e.subject === selectedSubject;
-    return matchesSubject;
-  });
+  const filteredExams = exams;
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#FDFCFB]">
@@ -214,18 +202,6 @@ const Dashboard = () => {
         <section className="mb-12">
           <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 lg:mb-8 gap-4">
             <h3 className="text-xl md:text-2xl font-serif font-bold text-slate-800">Available Assessments</h3>
-            <div className="relative group w-full md:w-auto">
-              <select
-                onChange={(e) => setSelectedSubject(e.target.value)}
-                className="w-full md:w-auto appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2 pr-10 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-900/20 cursor-pointer"
-              >
-                <option>All Subjects</option>
-                {subjects.map((s) => (
-                  <option key={s._id || s.name} value={s.name}>{s.name}</option>
-                ))}
-              </select>
-              <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-            </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -241,9 +217,7 @@ const Dashboard = () => {
                   className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm relative overflow-hidden group"
                 >
                   <div className="flex justify-between items-start mb-6">
-                    <span className="bg-[#0F172A] text-white text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-                      {exam.subject}
-                    </span>
+                    <div></div>
                     {exam.hasAttempted || exam.requestStatus ? (
                       <div className="flex flex-col items-end">
                         {exam.hasAttempted && <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-lg uppercase tracking-wider mb-1">Attempted</span>}
