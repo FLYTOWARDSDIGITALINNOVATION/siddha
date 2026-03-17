@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    LayoutDashboard, Users, FileText, Book,
+    LayoutDashboard, Users, FileText,
     LogOut, Menu, X, MessageSquare, Star
 } from 'lucide-react';
 
