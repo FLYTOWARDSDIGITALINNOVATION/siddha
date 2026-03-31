@@ -234,7 +234,7 @@ app.post('/api/auth/login', async (req, res) => {
         let user;
         let collectionName = 'User';
 
-        if (loginType === 'faculty') {
+        if (loginType === 'faculty' || loginType === 'admin') {
             user = await AdminUser.findOne({ email });
             collectionName = 'AdminUser';
         } else {
@@ -888,6 +888,14 @@ async function createInitialAdmin() {
             const hashedPassword = await bcrypt.hash('admin123', 10);
             await AdminUser.create({ fullName: 'Admin', email: adminEmail, password: hashedPassword, role: 'admin' });
             console.log('🚀 Admin Ready in AdminUser DB: admin@siddhaveda.com / admin123');
+        } else {
+            // Ensure password is synchronized with requested admin123
+            const isMatch = await bcrypt.compare('admin123', exists.password);
+            if (!isMatch) {
+                exists.password = await bcrypt.hash('admin123', 10);
+                await exists.save();
+                console.log('🔄 Admin Password Updated: admin@siddhaveda.com / admin123');
+            }
         }
     } catch (err) {
         console.error('Error creating initial admin:', err.message);

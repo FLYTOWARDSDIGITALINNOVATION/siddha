@@ -51,7 +51,7 @@ const Login = () => {
                         ← Back to Home
                     </Link>
                 </div>
-                <div className="flex bg-[#F1F3F5] p-1 rounded-2xl mb-8 w-full max-w-[300px] mx-auto md:mx-0 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] border border-gray-200/50">
+                <div className="flex bg-[#F1F3F5] p-1 rounded-2xl mb-8 w-full max-w-[360px] mx-auto md:mx-0 shadow-[inset_0_2px_4px_rgba(0,0,0,0.05)] border border-gray-200/50">
                     <button
                         type="button"
                         onClick={() => handleRoleChange('student')}
@@ -67,12 +67,23 @@ const Login = () => {
                         type="button"
                         onClick={() => handleRoleChange('faculty')}
                         className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-400 ${role === 'faculty'
+                            ? 'bg-white text-black shadow-md font-bold'
+                            : 'text-gray-500 hover:text-gray-800'
+                            }`}
+                    >
+                        <ShieldCheck size={16} className={role === 'faculty' ? 'text-black' : 'text-gray-400'} />
+                        <span className="text-[13px] font-bold tracking-tight">Faculty</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => handleRoleChange('admin')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-400 ${role === 'admin'
                             ? 'bg-black text-white shadow-md font-bold scale-[1.02]'
                             : 'text-gray-500 hover:text-gray-800'
                             }`}
                     >
-                        <ShieldCheck size={16} className={role === 'faculty' ? 'text-white' : 'text-gray-400'} />
-                        <span className="text-[13px] font-bold tracking-tight">Faculty</span>
+                        <ShieldCheck size={16} className={role === 'admin' ? 'text-white' : 'text-gray-400'} />
+                        <span className="text-[13px] font-bold tracking-tight">Admin</span>
                     </button>
                 </div>
 
