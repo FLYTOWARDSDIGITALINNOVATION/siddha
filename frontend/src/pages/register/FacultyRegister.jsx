@@ -37,7 +37,13 @@ const FacultyRegister = () => {
         }
 
         // We are on the last step (Login Setup)
+        if (!formData.email?.toLowerCase().endsWith('@gmail.com')) {
+            alert('Please use a valid @gmail.com address for registration.');
+            return;
+        }
+
         if (!formData.password || formData.password !== formData.confirmPassword) {
+            alert('Passwords do not match.');
             return;
         }
 

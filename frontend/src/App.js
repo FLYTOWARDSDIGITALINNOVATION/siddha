@@ -12,6 +12,8 @@ import TestPage from './pages/TestPage';
 import TestPreviewPage from './pages/TestPreviewPage';
 import Home from './pages/Home';
 import StudentHome from './pages/StudentHome';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register/student" element={<StudentRegister />} />
         <Route path="/register/faculty" element={<FacultyRegister />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* Student Home Route */}
         <Route path="/student-home" element={<StudentHome />} />

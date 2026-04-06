@@ -7,6 +7,7 @@ const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const crypto = require('crypto');
 
 dotenv.config();
 
@@ -22,6 +23,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // --- CONFIGURATION ---
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/siddha';
 const JWT_SECRET = 'siddha_veda_intelligence_secret_key_2024';
+
 
 // --- DATABASE CONNECTION ---
 mongoose.connect(MONGODB_URI)
@@ -81,7 +83,9 @@ const UserSchema = new mongoose.Schema({
     pgCollege: String,
     pgYear: String,
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
-    lastActive: Date
+    lastActive: Date,
+    resetPasswordToken: String,
+    resetPasswordExpires: Date
 }, { timestamps: true });
 
 const User = mongoose.model('User', UserSchema);
@@ -92,7 +96,9 @@ const AdminUserSchema = new mongoose.Schema({
     password: { type: String, required: true },
     role: { type: String, enum: ['faculty', 'admin'], default: 'faculty' },
     status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' }, // Admin defaults to approved
-    lastActive: Date
+    lastActive: Date,
+    resetPasswordToken: String,
+    resetPasswordExpires: Date
 }, { timestamps: true });
 
 const AdminUser = mongoose.model('AdminUser', AdminUserSchema);
@@ -198,6 +204,11 @@ app.post('/api/auth/register', async (req, res) => {
             return res.status(400).json({ message: 'All fields are required' });
         }
 
+        const lowerEmail = email.toLowerCase();
+        if (!lowerEmail.endsWith('@gmail.com') && lowerEmail !== 'admin@siddhaveda.com') {
+            return res.status(400).json({ message: 'Only @gmail.com email addresses are allowed.' });
+        }
+
         const existsStudent = await User.findOne({ email });
         const existsAdmin = await AdminUser.findOne({ email });
         if (existsStudent || existsAdmin) return res.status(400).json({ message: 'User already exists' });
@@ -231,6 +242,12 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
     try {
         const { email, password, role: loginType } = req.body;
+
+        const lowerEmail = email.toLowerCase();
+        if (!lowerEmail || (!lowerEmail.endsWith('@gmail.com') && lowerEmail !== 'admin@siddhaveda.com')) {
+            return res.status(400).json({ message: 'Only @gmail.com email addresses are allowed.' });
+        }
+
         let user;
         let collectionName = 'User';
 
@@ -261,6 +278,32 @@ app.post('/api/auth/login', async (req, res) => {
 
         const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
         res.json({ token, user: { id: user._id, email: user.email, role: user.role, fullName: user.fullName } });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+
+app.post('/api/auth/direct-password-reset', async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const lowerEmail = email.toLowerCase();
+        if (!lowerEmail || (!lowerEmail.endsWith('@gmail.com') && lowerEmail !== 'admin@siddhaveda.com')) {
+            return res.status(400).json({ message: 'Only @gmail.com email addresses are allowed.' });
+        }
+
+        let user = await User.findOne({ email }) || await AdminUser.findOne({ email });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User with this email does not exist.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 10);
+        user.password = hashedPassword;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+
+        res.json({ message: 'Your password has been successfully updated.' });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 

@@ -22,6 +22,13 @@ const Login = () => {
     // New function to handle the login submission
     const handleSubmit = async (e) => {
         e.preventDefault();
+        
+        const lowerEmail = formData.email.toLowerCase();
+        if (!lowerEmail.endsWith('@gmail.com') && lowerEmail !== 'admin@siddhaveda.com') {
+            alert('Please use a valid @gmail.com address or the authorized admin login.');
+            return;
+        }
+
         try {
             const response = await axios.post('http://localhost:5000/api/auth/login', { ...formData, role });
             const { token, user } = response.data;
@@ -89,7 +96,7 @@ const Login = () => {
                             label="Email Address"
                             name="email"
                             type="email"
-                            placeholder="scholar@siddha.edu"
+                            placeholder="user@gmail.com"
                             icon={Mail}
                             value={formData.email}
                             onChange={handleChange}
@@ -115,9 +122,9 @@ const Login = () => {
                             />
                             <span className="group-hover:text-black transition-colors">Remember me</span>
                         </label>
-                        <button type="button" className="font-bold text-black hover:text-gray-700 transition-colors">
+                        <Link to="/forgot-password" size="sm" className="font-bold text-black hover:text-gray-700 transition-colors">
                             Forgot password?
-                        </button>
+                        </Link>
                     </div>
 
                     <Button type="submit" className="w-full !py-3 !rounded-xl !bg-black hover:!bg-gray-800 !text-white !text-base !font-bold !shadow-lg">
