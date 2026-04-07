@@ -13,7 +13,7 @@ const TestPreviewPage = () => {
         const fetchPreview = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get(`http://localhost:5000/api/user/tests/${id}/preview`, {
+                const res = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/user/tests/${id}/preview`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setPreviewData(res.data);
@@ -73,7 +73,7 @@ const TestPreviewPage = () => {
                             <h3 className="font-bold text-slate-700">Question Paper Reference</h3>
                             {test.filename.endsWith('.pdf') ? (
                                 <a
-                                    href={`http://localhost:5000/uploads/${test.filename}`}
+                                    href={`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/uploads/${test.filename}`}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="text-blue-600 font-bold text-sm hover:underline"
@@ -85,13 +85,13 @@ const TestPreviewPage = () => {
                         <div className="p-2 bg-slate-100">
                             {test.filename.endsWith('.pdf') ? (
                                 <iframe
-                                    src={`http://localhost:5000/uploads/${test.filename}`}
+                                    src={`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/uploads/${test.filename}`}
                                     className="w-full h-[500px] border-none rounded-xl"
                                     title="Question Paper"
                                 />
                             ) : (
                                 <img
-                                    src={`http://localhost:5000/uploads/${test.filename}`}
+                                    src={`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/uploads/${test.filename}`}
                                     className="max-w-full h-auto mx-auto shadow-sm rounded-xl"
                                     alt="Question Paper"
                                 />
@@ -126,11 +126,11 @@ const TestPreviewPage = () => {
                                     <div className="mb-6 rounded-2xl overflow-hidden border border-slate-100 bg-slate-50">
                                         {q.filename.endsWith('.pdf') ? (
                                             <div className="p-8 text-center">
-                                                <a href={`http://localhost:5000/uploads/${q.filename}`} target="_blank" rel="noreferrer" className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all inline-block">View Question PDF</a>
+                                                <a href={`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/uploads/${q.filename}`} target="_blank" rel="noreferrer" className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold hover:bg-blue-700 transition-all inline-block">View Question PDF</a>
                                             </div>
                                         ) : (
                                             <div className="p-4">
-                                                <img src={`http://localhost:5000/uploads/${q.filename}`} alt="Question visual" className="max-w-full h-auto mx-auto shadow-md rounded-lg" />
+                                                <img src={`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/uploads/${q.filename}`} alt="Question visual" className="max-w-full h-auto mx-auto shadow-md rounded-lg" />
                                             </div>
                                         )}
                                     </div>

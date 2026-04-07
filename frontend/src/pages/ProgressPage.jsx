@@ -22,7 +22,7 @@ const ProgressPage = () => {
     const fetchProgress = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch('http://localhost:5000/api/user/progress', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/user/progress`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const result = await response.json();

@@ -15,7 +15,7 @@ const ReviewSection = () => {
         setMessage(null);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5000/api/user/reviews', {
+            const response = await fetch(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/user/reviews`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

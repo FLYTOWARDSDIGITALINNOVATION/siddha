@@ -24,7 +24,7 @@ const TestPage = () => {
         const fetchTest = async () => {
             try {
                 const token = localStorage.getItem('token');
-                const res = await axios.get(`http://localhost:5000/api/user/tests/${id}`, {
+                const res = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/user/tests/${id}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 const testData = res.data;
@@ -97,7 +97,7 @@ const TestPage = () => {
             const answersArray = test.questions.map((_, idx) =>
                 selectedAnswers[idx] !== undefined ? selectedAnswers[idx] : null
             );
-            const res = await axios.post(`http://localhost:5000/api/user/tests/${id}/submit`, {
+            const res = await axios.post(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/user/tests/${id}/submit`, {
                 answers: answersArray
             }, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -114,7 +114,7 @@ const TestPage = () => {
     const handleRequestReattempt = async () => {
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`http://localhost:5000/api/user/tests/${id}/request-reattempt`, {}, {
+            await axios.post(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/user/tests/${id}/request-reattempt`, {}, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             alert("Request sent successfully!");
@@ -347,14 +347,14 @@ const TestPage = () => {
                         <div className="w-1/2 h-full border-r border-slate-200 bg-slate-100 overflow-hidden relative">
                             {(question.filename?.endsWith('.pdf') || test.filename?.endsWith('.pdf')) ? (
                                 <iframe
-                                    src={`http://localhost:5000/uploads/${question.filename || test.filename}`}
+                                    src={`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/uploads/${question.filename || test.filename}`}
                                     className="w-full h-[calc(100vh-160px)]"
                                     title="Question Paper"
                                 />
                             ) : (
                                 <div className="w-full h-[calc(100vh-160px)] overflow-auto p-4 flex justify-center">
                                     <img
-                                        src={`http://localhost:5000/uploads/${question.filename || test.filename}`}
+                                        src={`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/uploads/${question.filename || test.filename}`}
                                         className="max-w-full h-auto shadow-lg rounded"
                                         alt="Question Paper"
                                     />

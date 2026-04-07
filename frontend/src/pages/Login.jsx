@@ -30,7 +30,7 @@ const Login = () => {
         }
 
         try {
-            const response = await axios.post('http://localhost:5000/api/auth/login', { ...formData, role });
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/auth/login`, { ...formData, role });
             const { token, user } = response.data;
 
             localStorage.setItem('token', token);

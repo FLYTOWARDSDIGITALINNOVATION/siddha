@@ -29,7 +29,7 @@ const Dashboard = () => {
         const headers = { Authorization: `Bearer ${token}` };
 
         // Fetch user profile
-        const userRes = await fetch('http://localhost:5000/api/user/profile', { headers });
+        const userRes = await fetch(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/user/profile`, { headers });
         if (userRes.ok) {
           const userData = await userRes.json();
           setUser(userData);
@@ -38,7 +38,7 @@ const Dashboard = () => {
         }
 
         // Fetch tests
-        const testsRes = await fetch('http://localhost:5000/api/user/tests', { headers });
+        const testsRes = await fetch(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/user/tests`, { headers });
         console.log('Tests API status:', testsRes.status);
         if (testsRes.ok) {
           const testsData = await testsRes.json();
@@ -74,7 +74,7 @@ const Dashboard = () => {
     setRequestLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/user/tests/${selectedTestToRequest._id}/request-reattempt`, {
+      const res = await fetch(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/user/tests/${selectedTestToRequest._id}/request-reattempt`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` }
       });

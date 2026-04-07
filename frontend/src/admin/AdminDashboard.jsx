@@ -50,23 +50,23 @@ const AdminDashboard = () => {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
-            const statsResponse = await axios.get('http://localhost:5000/api/admin/dashboard-stats', config);
+            const statsResponse = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/dashboard-stats`, config);
             setStats(statsResponse.data.stats);
             setChartData(statsResponse.data.charts);
 
-            const usersResponse = await axios.get('http://localhost:5000/api/admin/users', config);
+            const usersResponse = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/users`, config);
             setUsers(usersResponse.data);
 
-            const qbResponse = await axios.get('http://localhost:5000/api/admin/question-banks', config);
+            const qbResponse = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks`, config);
             setQuestionBanks(qbResponse.data);
 
-            const reRes = await axios.get('http://localhost:5000/api/admin/reattempt-requests', config);
+            const reRes = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reattempt-requests`, config);
             setReattemptRequests(reRes.data);
 
-            const pendingRegRes = await axios.get('http://localhost:5000/api/admin/pending-registrations', config);
+            const pendingRegRes = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/pending-registrations`, config);
             setPendingRegistrations(pendingRegRes.data);
 
-            const reviewsRes = await axios.get('http://localhost:5000/api/admin/reviews', config);
+            const reviewsRes = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reviews`, config);
             setReviews(reviewsRes.data);
 
         } catch (err) {
@@ -82,7 +82,7 @@ const AdminDashboard = () => {
         if (!window.confirm("Are you sure you want to delete this student and all their records?")) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/admin/users/${id}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/users/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -94,7 +94,7 @@ const AdminDashboard = () => {
     const handleReattemptAction = async (requestId, status) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/admin/reattempt-requests/${requestId}`, { status }, {
+            await axios.put(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reattempt-requests/${requestId}`, { status }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -107,8 +107,8 @@ const AdminDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             const endpoint = action === 'approve'
-                ? `http://localhost:5000/api/admin/approve-registration/${id}`
-                : `http://localhost:5000/api/admin/reject-registration/${id}`;
+                ? `${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/approve-registration/${id}`
+                : `${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reject-registration/${id}`;
 
             await axios.put(endpoint, {}, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -129,7 +129,7 @@ const AdminDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             console.log(`Toggling status for ${id} to ${newStatus}`);
-            await axios.patch(`http://localhost:5000/api/admin/question-banks/${id}/status`, { status: newStatus }, {
+            await axios.patch(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${id}/status`, { status: newStatus }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -142,7 +142,7 @@ const AdminDashboard = () => {
     const handleReviewAction = async (id, status) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/admin/reviews/${id}`, { status }, {
+            await axios.put(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reviews/${id}`, { status }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -155,7 +155,7 @@ const AdminDashboard = () => {
         if (!window.confirm("Delete this review?")) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/admin/reviews/${id}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reviews/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -168,7 +168,7 @@ const AdminDashboard = () => {
         if (!newText.trim()) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/admin/reviews/${id}`, { text: newText }, {
+            await axios.put(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reviews/${id}`, { text: newText }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setEditingReview(null);
@@ -197,7 +197,7 @@ const AdminDashboard = () => {
         if (!window.confirm("Are you sure you want to delete this question bank?")) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`http://localhost:5000/api/admin/question-banks/${id}`, {
+            await axios.delete(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -211,7 +211,7 @@ const AdminDashboard = () => {
     const handleDownload = async (bank) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`http://localhost:5000/api/admin/question-banks/${bank._id}/download`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${bank._id}/download`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -317,7 +317,7 @@ const AdminDashboard = () => {
             // Fallback to old json download if PDF generation fails
             try {
                const token = localStorage.getItem('token');
-               const response = await axios.get(`http://localhost:5000/api/admin/question-banks/${bank._id}/download`, {
+               const response = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${bank._id}/download`, {
                    headers: { Authorization: `Bearer ${token}` },
                    responseType: 'blob'
                });
@@ -882,7 +882,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5000/api/admin/question-banks', data, {
+            await axios.post(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks`, data, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -934,7 +934,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.post('http://localhost:5000/api/admin/question-banks', data, {
+            await axios.post(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks`, data, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -1149,7 +1149,7 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
     const [questions, setQuestions] = useState(
         (bank.questions || []).map((q, idx) => ({
             ...q,
-            imagePreview: q.filename ? `http://localhost:5000/uploads/${q.filename}` : null
+            imagePreview: q.filename ? `${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/uploads/${q.filename}` : null
         }))
     );
     const [loading, setLoading] = useState(false);
@@ -1211,7 +1211,7 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`http://localhost:5000/api/admin/question-banks/${bank._id}`, data, {
+            await axios.put(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${bank._id}`, data, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'

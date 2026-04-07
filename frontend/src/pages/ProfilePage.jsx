@@ -36,7 +36,7 @@ const ProfilePage = () => {
           return;
         }
 
-        const response = await fetch('http://localhost:5000/api/user/profile', {
+        const response = await fetch(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/user/profile`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -77,7 +77,7 @@ const ProfilePage = () => {
   const handleUpdate = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/user/update', {
+      const response = await fetch(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/user/update`, {
         method: 'POST', // Matches the backend route we added
         headers: {
           'Authorization': `Bearer ${token}`,

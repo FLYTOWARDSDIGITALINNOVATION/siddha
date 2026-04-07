@@ -42,7 +42,7 @@ const ForgotPassword = () => {
         setError(null);
 
         try {
-            const response = await axios.post('http://localhost:5000/api/auth/direct-password-reset', { 
+            const response = await axios.post(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/auth/direct-password-reset`, { 
                 email: formData.email,
                 password: formData.newPassword 
             });
@@ -56,7 +56,7 @@ const ForgotPassword = () => {
             if (serverMessage) {
                 setError(serverMessage);
             } else if (err.message === 'Network Error') {
-                setError('Could not connect to the server. Please ensure the backend is running on http://localhost:5000');
+                setError('Could not connect to the server. Please ensure the backend is running on ${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}');
             } else {
                 setError('Something went wrong. Please check your console or try again later.');
             }

@@ -91,7 +91,7 @@ const CreateTest = () => {
                 })))
             };
 
-            await axios.post('http://localhost:5000/api/admin/question-banks', payload, {
+            await axios.post(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks`, payload, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
