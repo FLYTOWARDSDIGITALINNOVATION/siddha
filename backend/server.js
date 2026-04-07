@@ -672,7 +672,11 @@ app.get('/api/user/tests', verifyToken, async (req, res) => {
         console.log(`[DEBUG] Found ${tests.length} published tests for user ${req.user.id}`);
 
         const testsWithStatus = tests.map(t => {
-            const reqForTest = requests.find(r => r.testId && r.testId.toString() === t._id.toString());
+            const reqsForTest = requests.filter(r => r.testId && r.testId.toString() === t._id.toString());
+            let reqForTest = reqsForTest.find(r => r.status === 'approved');
+            if (!reqForTest && reqsForTest.length > 0) {
+                reqForTest = reqsForTest.sort((a, b) => b.createdAt - a.createdAt)[0];
+            }
             return {
                 ...t._doc,
                 hasAttempted: attemptedTestIds.includes(t._id.toString()),
@@ -780,7 +784,10 @@ app.get('/api/user/tests/:id', verifyToken, async (req, res) => {
         if (!test) return res.status(404).json({ message: 'Test not found' });
 
         const attempt = await Attempt.findOne({ userId: req.user.id, testId: req.params.id });
-        const request = await ReAttemptRequest.findOne({ userId: req.user.id, testId: req.params.id }).sort({ createdAt: -1 });
+        let request = await ReAttemptRequest.findOne({ userId: req.user.id, testId: req.params.id, status: 'approved' });
+        if (!request) {
+            request = await ReAttemptRequest.findOne({ userId: req.user.id, testId: req.params.id }).sort({ createdAt: -1 });
+        }
 
         res.json({
             ...test.toObject(),
