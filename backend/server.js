@@ -66,6 +66,7 @@ const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['student', 'faculty', 'admin'], default: 'student' },
+    category: { type: String, enum: ['MRB', 'AIAPGET', 'Both'], default: 'Both' },
     // Student & Profile fields
     gender: String,
     dob: String,
@@ -106,6 +107,7 @@ const AdminUser = mongoose.model('AdminUser', AdminUserSchema);
 const QuestionBankSchema = new mongoose.Schema({
     title: String,
     difficulty: String,
+    category: { type: String, enum: ['MRB', 'AIAPGET', 'Both'], default: 'Both' },
     filename: String,
     filenames: [String],
     questions: [{
@@ -540,13 +542,14 @@ app.patch('/api/admin/question-banks/:id/status', verifyEducator, async (req, re
 
 app.put('/api/admin/question-banks/:id', verifyEducator, upload.any(), async (req, res) => {
     try {
-        const { title, subject, difficulty } = req.body;
+        const { title, subject, difficulty, category } = req.body;
         const bank = await QuestionBank.findById(req.params.id);
         if (!bank) return res.status(404).json({ message: 'Question bank not found' });
 
         // Update metadata
         if (title) bank.title = title;
         if (difficulty) bank.difficulty = difficulty;
+        if (category) bank.category = category;
         if (req.body.negativeMarking !== undefined) {
             bank.negativeMarking = req.body.negativeMarking === 'true' || req.body.negativeMarking === true;
         }
@@ -662,7 +665,8 @@ app.get('/api/user/tests', verifyToken, async (req, res) => {
         const requests = await ReAttemptRequest.find({ userId: req.user.id });
 
         const tests = await QuestionBank.find({
-            status: 'published'
+            status: 'published',
+            category: { $in: [user.category, 'Both'] }
         }).select('-questions.answer');
 
         console.log(`[DEBUG] Found ${tests.length} published tests for user ${req.user.id}`);
@@ -776,7 +780,7 @@ app.get('/api/user/tests/:id', verifyToken, async (req, res) => {
         if (!test) return res.status(404).json({ message: 'Test not found' });
 
         const attempt = await Attempt.findOne({ userId: req.user.id, testId: req.params.id });
-        const request = await ReAttemptRequest.findOne({ userId: req.user.id, testId: req.params.id, status: 'pending' });
+        const request = await ReAttemptRequest.findOne({ userId: req.user.id, testId: req.params.id }).sort({ createdAt: -1 });
 
         res.json({
             ...test.toObject(),
@@ -813,7 +817,6 @@ app.post('/api/user/tests/:id/submit', verifyToken, async (req, res) => {
 
         if (test.negativeMarking) {
             score = correctCount - (wrongCount * 0.25);
-            if (score < 0) score = 0;
         } else {
             score = correctCount;
         }

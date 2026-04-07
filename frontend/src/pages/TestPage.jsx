@@ -70,7 +70,7 @@ const TestPage = () => {
                     setExamStatus('active');
                 }
 
-                if (testData.hasAttempted) {
+                if (testData.hasAttempted && testData.requestStatus !== 'approved') {
                     setExamStatus('already_attempted');
                 }
 

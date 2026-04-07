@@ -463,6 +463,9 @@ const AdminDashboard = () => {
                                                         }`}>
                                                         {bank.difficulty}
                                                     </span>
+                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider ${bank.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : bank.category === 'MRB' ? 'bg-orange-100 text-orange-700' : 'bg-teal-100 text-teal-700'}`}>
+                                                        {bank.category || 'Both'}
+                                                    </span>
                                                 </div>
                                                 <div className="flex items-center gap-6 text-xs text-slate-500 font-medium">
                                                     <span>{bank.questionsCount || bank.questions} questions</span>
@@ -810,6 +813,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
     const [formData, setFormData] = useState({
         title: '',
         difficulty: 'Easy',
+        category: 'Both',
         negativeMarking: false,
         duration: 60,
         status: 'published'
@@ -853,6 +857,9 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
         setLoading(true);
         const data = new FormData();
         data.append('title', formData.title);
+        data.append('difficulty', formData.difficulty);
+        data.append('category', formData.category);
+        data.append('negativeMarking', formData.negativeMarking);
         data.append('duration', formData.duration);
         data.append('status', formData.status);
 
@@ -904,6 +911,9 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
         setLoading(true);
         const data = new FormData();
         data.append('title', formData.title);
+        data.append('difficulty', formData.difficulty);
+        data.append('category', formData.category);
+        data.append('negativeMarking', formData.negativeMarking);
         data.append('duration', formData.duration);
         data.append('status', updatedStatus);
 
@@ -953,8 +963,8 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
 
                 <div className="flex-1 overflow-y-auto p-6">
                     <form id="upload-form" onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <div className="md:col-span-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Title</label>
                                 <input
                                     required
@@ -975,6 +985,18 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
                                     <option>Easy</option>
                                     <option>Medium</option>
                                     <option>Hard</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Category</label>
+                                <select
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
+                                    value={formData.category}
+                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                >
+                                    <option>Both</option>
+                                    <option>MRB</option>
+                                    <option>AIAPGET</option>
                                 </select>
                             </div>
                             <div>
@@ -1118,8 +1140,10 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
         title: bank.title,
         difficulty: bank.difficulty || 'Easy',
+        category: bank.category || 'Both',
         duration: bank.duration || 60,
-        status: bank.status || 'published'
+        status: bank.status || 'published',
+        negativeMarking: bank.negativeMarking || false
     });
 
     const [questions, setQuestions] = useState(
@@ -1162,6 +1186,9 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
 
         const data = new FormData();
         data.append('title', formData.title);
+        data.append('difficulty', formData.difficulty);
+        data.append('category', formData.category);
+        data.append('negativeMarking', formData.negativeMarking);
         data.append('duration', formData.duration);
         data.append('status', formData.status);
 
@@ -1209,8 +1236,8 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
 
                 <div className="flex-1 overflow-y-auto p-6">
                     <form id="edit-form" onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
-                            <div className="md:col-span-1">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Title</label>
                                 <input
                                     required
@@ -1230,6 +1257,18 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
                                     <option>Easy</option>
                                     <option>Medium</option>
                                     <option>Hard</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Category</label>
+                                <select
+                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
+                                    value={formData.category}
+                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
+                                >
+                                    <option>Both</option>
+                                    <option>MRB</option>
+                                    <option>AIAPGET</option>
                                 </select>
                             </div>
                             <div>
