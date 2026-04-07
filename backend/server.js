@@ -789,6 +789,10 @@ app.get('/api/user/tests/:id', verifyToken, async (req, res) => {
             request = await ReAttemptRequest.findOne({ userId: req.user.id, testId: req.params.id }).sort({ createdAt: -1 });
         }
 
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+
         res.json({
             ...test.toObject(),
             hasAttempted: !!attempt,
