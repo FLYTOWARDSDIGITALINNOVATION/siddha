@@ -56,7 +56,7 @@ const ForgotPassword = () => {
             if (serverMessage) {
                 setError(serverMessage);
             } else if (err.message === 'Network Error') {
-                setError('Could not connect to the server. Please ensure the backend is running on ${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}');
+                setError(`Could not connect to the server. Please ensure the backend is running on ${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}`);
             } else {
                 setError('Something went wrong. Please check your console or try again later.');
             }
