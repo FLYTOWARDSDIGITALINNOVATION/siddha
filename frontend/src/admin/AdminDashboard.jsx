@@ -217,98 +217,95 @@ const AdminDashboard = () => {
             
             const questionData = response.data;
             
-            // Dynamic import of jspdf and jspdf-autotable to prevent issues with SSR/bundling if any
-            const { jsPDF } = await import('jspdf');
-            await import('jspdf-autotable');
+            // Import html2pdf.js
+            const html2pdf = (await import('html2pdf.js')).default;
             
-            const doc = new jsPDF();
+            // Create a temporary container for the PDF content
+            const element = document.createElement('div');
+            element.style.padding = '40px';
+            element.style.fontFamily = "'Inter', 'Noto Sans Tamil', sans-serif";
+            element.style.color = '#0F172A';
+            element.style.backgroundColor = '#FFFFFF';
             
-            // Header
-            doc.setFontSize(20);
-            doc.text(bank.title || 'Question Bank', 14, 22);
-            doc.setFontSize(11);
-            doc.setTextColor(100);
-            doc.text(`Difficulty: ${bank.difficulty || 'N/A'} | Total Questions: ${questionData.length}`, 14, 30);
-            
-            doc.setDrawColor(200);
-            doc.line(14, 40, 196, 40);
-            
-            let yPos = 48;
-            
+            let htmlContent = `
+                <div style="border-bottom: 2px solid #E2E8F0; padding-bottom: 20px; margin-bottom: 30px;">
+                    <h1 style="font-size: 28px; font-family: Playfair Display, serif; font-weight: bold; color: #0F172A; margin: 0 0 10px 0;">${bank.title || 'Question Bank'}</h1>
+                    <div style="font-size: 14px; color: #64748B; display: flex; gap: 20px;">
+                        <span>Difficulty: <strong style="color: #0F172A">${bank.difficulty || 'N/A'}</strong></span>
+                        <span>Total Questions: <strong style="color: #0F172A">${questionData.length}</strong></span>
+                        <span>Category: <strong style="color: #0F172A">${bank.category || 'Both'}</strong></span>
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 30px;">
+            `;
+
             questionData.forEach((q, index) => {
-                // Check if we need a new page
-                if (yPos > 270) {
-                    doc.addPage();
-                    yPos = 20;
-                }
-                
-                doc.setFontSize(12);
-                doc.setTextColor(0);
-                doc.setFont("helvetica", "bold");
-                
-                const questionText = `${index + 1}. ${q.question}`;
-                const splitQuestion = doc.splitTextToSize(questionText, 180);
-                doc.text(splitQuestion, 14, yPos);
-                yPos += (splitQuestion.length * 6) + 2;
-                
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(11);
-                
+                htmlContent += `
+                    <div style="page-break-inside: avoid; border: 1px solid #F1F5F9; padding: 20px; border-radius: 12px; background-color: #F8FAFC;">
+                        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+                            <div style="background-color: #0F172A; color: white; width: 28px; height: 28px; border-radius: 6px; display: flex; items-center; justify-content: center; font-weight: bold; flex-shrink: 0; font-size: 14px; line-height: 28px; text-align: center;">
+                                ${index + 1}
+                            </div>
+                            <div style="font-size: 16px; font-weight: 600; color: #1E293B; line-height: 1.6; padding-top: 2px;">
+                                ${q.question}
+                            </div>
+                        </div>
+                `;
+
                 if (q.options && Array.isArray(q.options)) {
+                    htmlContent += `<div style="margin-left: 43px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">`;
                     q.options.forEach((opt, optIndex) => {
-                        const optLetter = String.fromCharCode(97 + optIndex); // a, b, c, d...
-                        const optText = `${optLetter}) ${opt}`;
-                        const splitOpt = doc.splitTextToSize(optText, 170);
-                        
-                        // Check pagination inside options
-                        if (yPos > 280) {
-                            doc.addPage();
-                            yPos = 20;
-                        }
-                        
-                        doc.text(splitOpt, 20, yPos);
-                        yPos += (splitOpt.length * 6);
+                        const optLetter = String.fromCharCode(97 + optIndex);
+                        htmlContent += `
+                            <div style="display: flex; gap: 8px; font-size: 14px; color: #475569; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #E2E8F0;">
+                                <span style="font-weight: bold; color: #94A3B8;">${optLetter})</span>
+                                <span>${opt}</span>
+                            </div>
+                        `;
                     });
+                    htmlContent += `</div>`;
                 }
-                
-                yPos += 2;
-                
-                // Add Answer
+
                 if (q.answer !== undefined) {
-                    // Check pagination for answer
-                    if (yPos > 280) {
-                        doc.addPage();
-                        yPos = 20;
-                    }
-                    
-                    doc.setFont("helvetica", "italic");
-                    doc.setTextColor(0, 128, 0); // Green color for answer
-                    
-                    let answerText = "Answer: ";
-                    if (typeof q.answer === 'number' && q.options) {
-                        answerText += `${String.fromCharCode(97 + q.answer)}) ${q.options[q.answer]}`;
-                    } else {
-                        answerText += q.answer;
-                    }
-                    
-                    doc.text(answerText, 20, yPos);
-                    yPos += 8;
+                    const ansIndex = Number(q.answer);
+                    const ansText = (!isNaN(ansIndex) && q.options && q.options[ansIndex])
+                        ? `${String.fromCharCode(97 + ansIndex)}) ${q.options[ansIndex]}`
+                        : q.answer;
+                        
+                    htmlContent += `
+                        <div style="margin-left: 43px; margin-top: 15px; padding: 10px 15px; background-color: #F0FDF4; border-radius: 8px; border: 1px solid #BBF7D0; color: #166534; font-size: 14px; font-weight: 600;">
+                            Answer: ${ansText}
+                        </div>
+                    `;
                 }
-                
-                doc.setTextColor(0);
-                yPos += 4; // Space between questions
+
+                htmlContent += `</div>`;
             });
+
+            htmlContent += `</div>`;
+            htmlContent += `
+                <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #94A3B8; border-top: 1px solid #E2E8F0; padding-top: 20px;">
+                    Generated by Siddha Veda Intelligence Dashboard
+                </div>
+            `;
             
-            // Add page numbers
-            const pageCount = doc.internal.getNumberOfPages();
-            for(let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(10);
-                doc.setTextColor(150);
-                doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, 290, { align: 'center' });
-            }
-            
-            doc.save(`${bank.filename ? bank.filename.replace('.json', '') : bank.title.replace(/\s+/g, '_')}.pdf`);
+            element.innerHTML = htmlContent;
+
+            const opt = {
+                margin:       0.5,
+                filename:     `${bank.filename ? bank.filename.replace('.json', '') : bank.title.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { 
+                    scale: 2, 
+                    useCORS: true, 
+                    logging: false,
+                    letterRendering: true
+                },
+                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Run html2pdf
+            await html2pdf().from(element).set(opt).save();
             
         } catch (err) {
             console.error("Download failed", err);
