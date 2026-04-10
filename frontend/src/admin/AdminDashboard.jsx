@@ -534,8 +534,9 @@ const AdminDashboard = () => {
                                 </div>
                             </div>
 
-                            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden overflow-x-auto">
-                                <table className="w-full text-left min-w-[800px] md:min-w-full">
+                            {/* DESKTOP VIEW */}
+                            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hidden md:block">
+                                <table className="w-full text-left">
                                     <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
                                         <tr>
                                             <th className="px-6 py-4">Student</th>
@@ -583,6 +584,49 @@ const AdminDashboard = () => {
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* MOBILE VIEW */}
+                            <div className="space-y-4 block md:hidden">
+                                {users.filter(u => (u.role || 'student').toLowerCase() === 'student').length > 0 ? (
+                                    users.filter(u => (u.role || 'student').toLowerCase() === 'student').map((user, i) => (
+                                        <div key={i} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-3">
+                                            <div className="flex justify-between items-start">
+                                                <div>
+                                                    <p className="font-bold text-slate-900">{user.fullName}</p>
+                                                    <p className="text-slate-400 text-xs">{user.email}</p>
+                                                </div>
+                                                <span className="text-[10px] text-slate-500">
+                                                    {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
+                                                </span>
+                                            </div>
+
+                                            <div className="flex flex-wrap gap-2 text-xs font-medium">
+                                                <div className="bg-slate-50 px-3 py-1.5 rounded-lg flex-1">
+                                                    <span className="text-slate-400 block mb-0.5 text-[10px] uppercase">Tests</span>
+                                                    {user.testsCompleted || 0}
+                                                </div>
+                                                <div className="bg-teal-50 px-3 py-1.5 rounded-lg flex-1 text-teal-700">
+                                                    <span className="text-teal-400 block mb-0.5 text-[10px] uppercase">Avg Score</span>
+                                                    {user.averageScore || '-'}%
+                                                </div>
+                                                <div className="bg-green-50 px-3 py-1.5 rounded-lg flex-1 text-green-600 flex flex-col justify-center items-center">
+                                                    <span className="text-green-400 block mb-0.5 text-[10px] uppercase">Trend</span>
+                                                    <TrendingUp size={14} />
+                                                </div>
+                                            </div>
+
+                                            <div className="flex justify-end gap-3 pt-2 border-t border-slate-50">
+                                                <button onClick={() => setSelectedStudent(user)} className="text-blue-600 font-bold hover:underline text-xs p-1">View Details</button>
+                                                <button onClick={() => handleDeleteStudent(user._id)} className="text-red-600 font-bold hover:underline text-xs p-1">Delete</button>
+                                            </div>
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="bg-white p-6 rounded-xl border border-slate-100 text-center text-slate-400 font-medium text-sm">
+                                        No students found.
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     )
                 }
@@ -605,10 +649,10 @@ const AdminDashboard = () => {
                                 </button>
                             </div>
 
-                            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden overflow-x-auto shadow-sm">
                                 {requestType === 'registration' ? (
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                                    <table className="w-full text-left min-w-[800px] md:min-w-full">
+                                        <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
                                             <tr>
                                                 <th className="px-6 py-4">User Details</th>
                                                 <th className="px-6 py-4">Role</th>
@@ -648,14 +692,14 @@ const AdminDashboard = () => {
                                             ))}
                                             {pendingRegistrations.length === 0 && (
                                                 <tr>
-                                                    <td colSpan="4" className="text-center py-10 text-slate-400 font-medium italic">No pending registrations found</td>
+                                                    <td colSpan="5" className="text-center py-10 text-slate-400 font-medium italic">No pending registrations found</td>
                                                 </tr>
                                             )}
                                         </tbody>
                                     </table>
                                 ) : (
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                                    <table className="w-full text-left min-w-[800px] md:min-w-full">
+                                        <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
                                             <tr>
                                                 <th className="px-6 py-4">Student</th>
                                                 <th className="px-6 py-4">Assessment</th>
@@ -699,7 +743,8 @@ const AdminDashboard = () => {
                 {/* CONTENT: REVIEWS */}
                 {activeTab === 'Reviews' && (
                     <div className="space-y-6">
-                        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                        {/* DESKTOP VIEW */}
+                        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hidden md:block">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
                                     <tr>
@@ -778,6 +823,72 @@ const AdminDashboard = () => {
                                     )}
                                 </tbody>
                             </table>
+                        </div>
+
+                        {/* MOBILE VIEW */}
+                        <div className="space-y-4 block md:hidden">
+                            {reviews.length > 0 ? reviews.map((review, i) => (
+                                <div key={i} className="bg-white p-4 md:p-6 rounded-xl border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:shadow-sm transition-shadow">
+                                    <div className="w-full md:w-1/4">
+                                        <p className="font-bold text-slate-900">{review.name}</p>
+                                        <p className="text-xs text-slate-400">{review.userId?.email || 'N/A'}</p>
+                                        <div className="flex items-center gap-0.5 mt-2">
+                                            {[...Array(5)].map((_, idx) => (
+                                                <Star key={idx} size={12} className={idx < review.rating ? "text-amber-400 fill-amber-400" : "text-slate-200"} />
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="w-full md:w-1/2">
+                                        {editingReview?._id === review._id ? (
+                                            <div className="flex flex-col gap-2">
+                                                <textarea
+                                                    value={editingReview.text}
+                                                    onChange={(e) => setEditingReview({ ...editingReview, text: e.target.value })}
+                                                    className="w-full p-2 border rounded-lg text-sm"
+                                                    rows="3"
+                                                />
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => requestUpdateReview(review._id, editingReview.text)} className="text-green-600 text-xs font-bold hover:underline">Save</button>
+                                                    <button onClick={() => setEditingReview(null)} className="text-red-500 text-xs font-bold hover:underline">Cancel</button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <p className="text-sm text-slate-600" title={review.text}>{review.text}</p>
+                                        )}
+                                    </div>
+
+                                    <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
+                                        <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${review.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                            review.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                            }`}>
+                                            {review.status}
+                                        </span>
+                                        <div className="flex items-center gap-1">
+                                            <button onClick={() => setEditingReview(review)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-colors" title="Edit">
+                                                <Edit size={16} />
+                                            </button>
+                                            {review.status !== 'approved' && (
+                                                <button onClick={() => handleReviewAction(review._id, 'approved')} className="text-green-600 hover:bg-green-50 p-2 rounded-lg transition-colors" title="Approve">
+                                                    <Check size={16} />
+                                                </button>
+                                            )}
+                                            {review.status !== 'rejected' && review.status !== 'approved' && (
+                                                <button onClick={() => handleReviewAction(review._id, 'rejected')} className="text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-colors" title="Reject">
+                                                    <X size={16} />
+                                                </button>
+                                            )}
+                                            <button onClick={() => handleReviewDelete(review._id)} className="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors" title="Delete">
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center text-slate-400">
+                                    No reviews found
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
