@@ -214,19 +214,19 @@ const AdminDashboard = () => {
             const response = await axios.get(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/admin/question-banks/${bank._id}/download`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            
+
             const questionData = response.data;
-            
+
             // Import html2pdf.js
             const html2pdf = (await import('html2pdf.js')).default;
-            
+
             // Create a temporary container for the PDF content
             const element = document.createElement('div');
             element.style.padding = '50px 45px';
             element.style.fontFamily = "'Inter', 'Noto Sans Tamil', sans-serif";
             element.style.color = '#0F172A';
             element.style.backgroundColor = '#FFFFFF';
-            
+
             let htmlContent = `
                 <!-- Header -->
                 <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0F172A; padding-bottom: 30px; margin-bottom: 40px;">
@@ -282,7 +282,7 @@ const AdminDashboard = () => {
                     const ansText = (!isNaN(ansIndex) && q.options && q.options[ansIndex])
                         ? `${String.fromCharCode(97 + ansIndex)}) ${q.options[ansIndex]}`
                         : q.answer;
-                        
+
                     htmlContent += `
                         <div style="margin-left: 48px; margin-top: 18px; padding: 12px 18px; background-color: #F0FDF4; border-radius: 10px; border: 1px solid #DCFCE7; color: #166534; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 10px;">
                             <div style="width: 6px; height: 18px; background-color: #22C55E; border-radius: 4px;"></div>
@@ -295,7 +295,7 @@ const AdminDashboard = () => {
             });
 
             htmlContent += `</div>`;
-            
+
             // Footer
             htmlContent += `
                 <div style="margin-top: 60px; padding-top: 30px; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #94A3B8; font-weight: 600;">
@@ -303,45 +303,45 @@ const AdminDashboard = () => {
                     <div style="text-transform: uppercase; letter-spacing: 1px;">Proprietary & Confidential Examination Content</div>
                 </div>
             `;
-            
+
             element.innerHTML = htmlContent;
 
             const opt = {
-                margin:       0.5,
-                filename:     `${bank.filename ? bank.filename.replace('.json', '') : bank.title.replace(/\s+/g, '_')}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { 
-                    scale: 2, 
-                    useCORS: true, 
+                margin: 0.5,
+                filename: `${bank.filename ? bank.filename.replace('.json', '') : bank.title.replace(/\s+/g, '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
                     logging: false,
                     letterRendering: true
                 },
-                jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
 
             // Run html2pdf
             await html2pdf().from(element).set(opt).save();
-            
+
         } catch (err) {
             console.error("Download failed", err);
             alert(`Failed to download JSON, trying fallback...`);
-            
+
             // Fallback to old json download if PDF generation fails
             try {
-               const token = localStorage.getItem('token');
-               const response = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${bank._id}/download`, {
-                   headers: { Authorization: `Bearer ${token}` },
-                   responseType: 'blob'
-               });
-               const url = window.URL.createObjectURL(new Blob([response.data]));
-               const link = document.createElement('a');
-               link.href = url;
-               link.setAttribute('download', bank.filename || `${bank.title}.json`);
-               document.body.appendChild(link);
-               link.click();
-               link.remove();
+                const token = localStorage.getItem('token');
+                const response = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${bank._id}/download`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    responseType: 'blob'
+                });
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', bank.filename || `${bank.title}.json`);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
             } catch (fallbackErr) {
-               alert(`Fallback failed: ${fallbackErr.message}`);
+                alert(`Fallback failed: ${fallbackErr.message}`);
             }
         }
     };
@@ -418,7 +418,7 @@ const AdminDashboard = () => {
 
                         {/* Charts */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                             <div>
+                            <div>
                                 <h3 className="text-xl font-serif font-bold text-gray-800 mb-6">Performance Distribution</h3>
                                 <div className="h-64">
                                     <ResponsiveContainer width="100%" height="100%">
@@ -467,49 +467,49 @@ const AdminDashboard = () => {
                         <div className="space-y-6">
                             {questionBanks.length > 0 ?
                                 questionBanks.map((bank) => (
-                                        <div key={bank._id || bank.id} className="bg-white p-4 md:p-6 rounded-xl border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 hover:shadow-sm transition-shadow">
-                                            <div className="w-full">
-                                                <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2 md:mb-1">
-                                                    <h4 className="text-base md:text-lg font-bold text-slate-900">{bank.title}</h4>
-                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${bank.difficulty === 'Hard' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
-                                                        }`}>
-                                                        {bank.difficulty}
-                                                    </span>
-                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider ${bank.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : bank.category === 'MRB' ? 'bg-orange-100 text-orange-700' : 'bg-teal-100 text-teal-700'}`}>
-                                                        {bank.category || 'Both'}
-                                                    </span>
-                                                </div>
-                                                <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-500 font-medium">
-                                                    <span>{bank.questionsCount || bank.questions} questions</span>
-                                                    <span>Uploaded {new Date(bank.createdAt || bank.uploaded).toLocaleDateString()}</span>
-                                                    <span>{bank.attempts} attempts</span>
-                                                </div>
+                                    <div key={bank._id || bank.id} className="bg-white p-4 md:p-6 rounded-xl border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 hover:shadow-sm transition-shadow">
+                                        <div className="w-full">
+                                            <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2 md:mb-1">
+                                                <h4 className="text-base md:text-lg font-bold text-slate-900">{bank.title}</h4>
+                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${bank.difficulty === 'Hard' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
+                                                    }`}>
+                                                    {bank.difficulty}
+                                                </span>
+                                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider ${bank.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : bank.category === 'MRB' ? 'bg-orange-100 text-orange-700' : 'bg-teal-100 text-teal-700'}`}>
+                                                    {bank.category || 'Both'}
+                                                </span>
                                             </div>
-                                            <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter md:hidden">Status:</span>
-                                                    <div className="flex flex-col items-center">
-                                                        <span className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-tighter hidden md:block">Test Status</span>
-                                                        <button
-                                                            onClick={() => handleToggleStatus(bank)}
-                                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${bank.status === 'published' ? 'bg-green-500' : 'bg-slate-300'}`}
-                                                        >
-                                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${bank.status === 'published' ? 'translate-x-6' : 'translate-x-1'}`} />
-                                                        </button>
-                                                        <span className={`text-[10px] font-bold mt-1 uppercase hidden md:block ${bank.status === 'published' ? 'text-green-600' : 'text-slate-400'}`}>
-                                                            {bank.status === 'published' ? 'Active' : 'Disabled'}
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                                <div className="w-px h-8 bg-slate-100 mx-1 hidden md:block"></div>
-                                                <div className="flex items-center gap-1">
-                                                    <button onClick={() => handleDownload(bank)} className="p-2 text-slate-400 hover:text-teal-600 transition-colors" title="Download"><Download size={18} /></button>
-                                                    <button onClick={() => setEditingBank(bank)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Edit"><Edit size={18} /></button>
-                                                    <button onClick={() => handleDelete(bank._id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Delete"><Trash2 size={18} /></button>
-                                                </div>
+                                            <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-500 font-medium">
+                                                <span>{bank.questionsCount || bank.questions} questions</span>
+                                                <span>Uploaded {new Date(bank.createdAt || bank.uploaded).toLocaleDateString()}</span>
+                                                <span>{bank.attempts} attempts</span>
                                             </div>
                                         </div>
-                                    )) : (
+                                        <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
+                                            <div className="flex items-center gap-3">
+                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter md:hidden">Status:</span>
+                                                <div className="flex flex-col items-center">
+                                                    <span className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-tighter hidden md:block">Test Status</span>
+                                                    <button
+                                                        onClick={() => handleToggleStatus(bank)}
+                                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${bank.status === 'published' ? 'bg-green-500' : 'bg-slate-300'}`}
+                                                    >
+                                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${bank.status === 'published' ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                    </button>
+                                                    <span className={`text-[10px] font-bold mt-1 uppercase hidden md:block ${bank.status === 'published' ? 'text-green-600' : 'text-slate-400'}`}>
+                                                        {bank.status === 'published' ? 'Active' : 'Disabled'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="w-px h-8 bg-slate-100 mx-1 hidden md:block"></div>
+                                            <div className="flex items-center gap-1">
+                                                <button onClick={() => handleDownload(bank)} className="p-2 text-slate-400 hover:text-teal-600 transition-colors" title="Download"><Download size={18} /></button>
+                                                <button onClick={() => setEditingBank(bank)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Edit"><Edit size={18} /></button>
+                                                <button onClick={() => handleDelete(bank._id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Delete"><Trash2 size={18} /></button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )) : (
                                     <div className="text-center py-10 text-slate-400">
                                         No question banks found.
                                     </div>
