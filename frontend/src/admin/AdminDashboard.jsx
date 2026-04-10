@@ -211,7 +211,7 @@ const AdminDashboard = () => {
     const handleDownload = async (bank) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${bank._id}/download`, {
+            const response = await axios.get(`${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/admin/question-banks/${bank._id}/download`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -222,44 +222,55 @@ const AdminDashboard = () => {
             
             // Create a temporary container for the PDF content
             const element = document.createElement('div');
-            element.style.padding = '40px';
+            element.style.padding = '50px 45px';
             element.style.fontFamily = "'Inter', 'Noto Sans Tamil', sans-serif";
             element.style.color = '#0F172A';
             element.style.backgroundColor = '#FFFFFF';
             
             let htmlContent = `
-                <div style="border-bottom: 2px solid #E2E8F0; padding-bottom: 20px; margin-bottom: 30px;">
-                    <h1 style="font-size: 28px; font-family: Playfair Display, serif; font-weight: bold; color: #0F172A; margin: 0 0 10px 0;">${bank.title || 'Question Bank'}</h1>
-                    <div style="font-size: 14px; color: #64748B; display: flex; gap: 20px;">
-                        <span>Difficulty: <strong style="color: #0F172A">${bank.difficulty || 'N/A'}</strong></span>
-                        <span>Total Questions: <strong style="color: #0F172A">${questionData.length}</strong></span>
-                        <span>Category: <strong style="color: #0F172A">${bank.category || 'Both'}</strong></span>
+                <!-- Header -->
+                <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0F172A; padding-bottom: 30px; margin-bottom: 40px;">
+                    <div style="display: flex; align-items: center; gap: 24px;">
+                        <img src="/LOGO.jpeg" style="width: 85px; height: 85px; border-radius: 14px; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.05);" />
+                        <div>
+                            <h1 style="font-size: 26px; font-family: 'Playfair Display', serif; font-weight: 800; color: #0F172A; margin: 0; letter-spacing: -0.5px;">JCL SIDDHA ACADEMY</h1>
+                            <p style="font-size: 12px; color: #64748B; margin: 4px 0 0 0; font-weight: 700; text-transform: uppercase; tracking: 1px;">Veda Intelligence Assessment System</p>
+                        </div>
+                    </div>
+                    <div style="text-align: right; background-color: #F8FAFC; padding: 15px 20px; border-radius: 12px; border: 1px solid #E2E8F0;">
+                        <h2 style="font-size: 18px; font-weight: 800; color: #0F172A; margin: 0 0 8px 0;">${bank.title || 'Examination'}</h2>
+                        <div style="font-size: 11px; color: #64748B; display: flex; flex-direction: column; gap: 4px; font-weight: 600;">
+                            <span>DIFFICULTY: <strong style="color: #0F172A">${bank.difficulty?.toUpperCase() || 'N/A'}</strong></span>
+                            <span>CATEGORY: <strong style="color: #0F172A">${bank.category?.toUpperCase() || 'BOTH'}</strong></span>
+                            <span>QUESTIONS: <strong style="color: #0F172A">${questionData.length}</strong></span>
+                        </div>
                     </div>
                 </div>
-                <div style="display: flex; flex-direction: column; gap: 30px;">
+
+                <div style="display: flex; flex-direction: column; gap: 28px;">
             `;
 
             questionData.forEach((q, index) => {
                 htmlContent += `
-                    <div style="page-break-inside: avoid; border: 1px solid #F1F5F9; padding: 20px; border-radius: 12px; background-color: #F8FAFC;">
-                        <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-                            <div style="background-color: #0F172A; color: white; width: 28px; height: 28px; border-radius: 6px; display: flex; items-center; justify-content: center; font-weight: bold; flex-shrink: 0; font-size: 14px; line-height: 28px; text-align: center;">
+                    <div style="page-break-inside: avoid; border: 1px solid #F1F5F9; border-left: 4px solid #0F172A; padding: 24px; border-radius: 0 12px 12px 0; background-color: #FFFFFF; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <div style="display: flex; gap: 18px; margin-bottom: 18px;">
+                            <div style="background-color: #0F172A; color: white; width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0; font-size: 13px; line-height: 1;">
                                 ${index + 1}
                             </div>
-                            <div style="font-size: 16px; font-weight: 600; color: #1E293B; line-height: 1.6; padding-top: 2px;">
+                            <div style="font-size: 16px; font-weight: 700; color: #1E293B; line-height: 1.6; padding-top: 1px;">
                                 ${q.question}
                             </div>
                         </div>
                 `;
 
                 if (q.options && Array.isArray(q.options)) {
-                    htmlContent += `<div style="margin-left: 43px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">`;
+                    htmlContent += `<div style="margin-left: 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">`;
                     q.options.forEach((opt, optIndex) => {
                         const optLetter = String.fromCharCode(97 + optIndex);
                         htmlContent += `
-                            <div style="display: flex; gap: 8px; font-size: 14px; color: #475569; background: white; padding: 10px 15px; border-radius: 8px; border: 1px solid #E2E8F0;">
-                                <span style="font-weight: bold; color: #94A3B8;">${optLetter})</span>
-                                <span>${opt}</span>
+                            <div style="display: flex; gap: 10px; font-size: 13px; color: #475569; background: #F8FAFC; padding: 12px 16px; border-radius: 10px; border: 1px solid #E2E8F0; align-items: start;">
+                                <span style="font-weight: 800; color: #94A3B8; min-width: 18px;">${optLetter})</span>
+                                <span style="font-weight: 500;">${opt}</span>
                             </div>
                         `;
                     });
@@ -273,8 +284,9 @@ const AdminDashboard = () => {
                         : q.answer;
                         
                     htmlContent += `
-                        <div style="margin-left: 43px; margin-top: 15px; padding: 10px 15px; background-color: #F0FDF4; border-radius: 8px; border: 1px solid #BBF7D0; color: #166534; font-size: 14px; font-weight: 600;">
-                            Answer: ${ansText}
+                        <div style="margin-left: 48px; margin-top: 18px; padding: 12px 18px; background-color: #F0FDF4; border-radius: 10px; border: 1px solid #DCFCE7; color: #166534; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 10px;">
+                            <div style="width: 6px; height: 18px; background-color: #22C55E; border-radius: 4px;"></div>
+                            ANSWER & RATIONALE: ${ansText}
                         </div>
                     `;
                 }
@@ -283,9 +295,12 @@ const AdminDashboard = () => {
             });
 
             htmlContent += `</div>`;
+            
+            // Footer
             htmlContent += `
-                <div style="margin-top: 40px; text-align: center; font-size: 12px; color: #94A3B8; border-top: 1px solid #E2E8F0; padding-top: 20px;">
-                    Generated by Siddha Veda Intelligence Dashboard
+                <div style="margin-top: 60px; padding-top: 30px; border-top: 1px solid #E2E8F0; display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #94A3B8; font-weight: 600;">
+                    <div>© ${new Date().getFullYear()} JCL SIDDHA ACADEMY. ALL RIGHTS RESERVED.</div>
+                    <div style="text-transform: uppercase; letter-spacing: 1px;">Proprietary & Confidential Examination Content</div>
                 </div>
             `;
             
