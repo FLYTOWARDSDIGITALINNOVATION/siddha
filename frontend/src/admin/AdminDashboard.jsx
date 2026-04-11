@@ -35,10 +35,8 @@ const AdminDashboard = () => {
     const [loadingStats, setLoadingStats] = useState(false);
 
     const navigate = useNavigate();
-    
-    // Determine API URL
-    const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : "https://jclsiddhaacademy.in");
 
+    const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : "https://jclsiddhaacademy.in");
 
     const fetchAllData = useCallback(async () => {
         try {
@@ -48,14 +46,19 @@ const AdminDashboard = () => {
             const statsResponse = await axios.get(`${API_URL}/api/admin/dashboard-stats`, config);
             setStats(statsResponse.data.stats);
             setChartData(statsResponse.data.charts);
+
             const usersResponse = await axios.get(`${API_URL}/api/admin/users`, config);
             setUsers(usersResponse.data);
+
             const qbResponse = await axios.get(`${API_URL}/api/admin/question-banks`, config);
             setQuestionBanks(qbResponse.data);
+
             const reRes = await axios.get(`${API_URL}/api/admin/reattempt-requests`, config);
             setReattemptRequests(reRes.data);
+
             const pendingRegRes = await axios.get(`${API_URL}/api/admin/pending-registrations`, config);
             setPendingRegistrations(pendingRegRes.data);
+
             const reviewsRes = await axios.get(`${API_URL}/api/admin/reviews`, config);
             setReviews(reviewsRes.data);
 
@@ -66,7 +69,7 @@ const AdminDashboard = () => {
                 navigate('/login');
             }
         }
-    }, [navigate, API_URL]);
+    }, [navigate]);
 
     const fetchBankStats = async (bankId) => {
         setLoadingStats(true);
@@ -99,7 +102,7 @@ const AdminDashboard = () => {
     const handleReattemptAction = async (requestId, status) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reattempt-requests/${requestId}`, { status }, {
+            await axios.put(`${API_URL}/api/admin/reattempt-requests/${requestId}`, { status }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -112,8 +115,8 @@ const AdminDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             const endpoint = action === 'approve'
-                ? `${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/approve-registration/${id}`
-                : `${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reject-registration/${id}`;
+                ? `${API_URL}/api/admin/approve-registration/${id}`
+                : `${API_URL}/api/admin/reject-registration/${id}`;
 
             await axios.put(endpoint, {}, {
                 headers: { Authorization: `Bearer ${token}` }
@@ -134,7 +137,7 @@ const AdminDashboard = () => {
         try {
             const token = localStorage.getItem('token');
             console.log(`Toggling status for ${id} to ${newStatus}`);
-            await axios.patch(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${id}/status`, { status: newStatus }, {
+            await axios.patch(`${API_URL}/api/admin/question-banks/${id}/status`, { status: newStatus }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -147,7 +150,7 @@ const AdminDashboard = () => {
     const handleReviewAction = async (id, status) => {
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reviews/${id}`, { status }, {
+            await axios.put(`${API_URL}/api/admin/reviews/${id}`, { status }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -160,7 +163,7 @@ const AdminDashboard = () => {
         if (!window.confirm("Delete this review?")) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reviews/${id}`, {
+            await axios.delete(`${API_URL}/api/admin/reviews/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -173,7 +176,7 @@ const AdminDashboard = () => {
         if (!newText.trim()) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reviews/${id}`, { text: newText }, {
+            await axios.put(`${API_URL}/api/admin/reviews/${id}`, { text: newText }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setEditingReview(null);
@@ -202,7 +205,7 @@ const AdminDashboard = () => {
         if (!window.confirm("Are you sure you want to delete this question bank?")) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${id}`, {
+            await axios.delete(`${API_URL}/api/admin/question-banks/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -212,18 +215,15 @@ const AdminDashboard = () => {
             alert(`Failed to delete: ${msg}`);
         }
     };
-    
+
     const handleDownload = async (bank) => {
         try {
             const token = localStorage.getItem('token');
-            // Fetch the actual questions for the bank
             const response = await axios.get(`${API_URL}/api/admin/question-banks/${bank._id}/download`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            
+
             const questionData = response.data;
-            
-            // If the server returned a file (blob) instead of JSON questions, handle as direct download
             const contentType = (response.headers['content-type'] || response.headers['Content-Type'] || "");
             if (contentType.includes('application/octet-stream') || contentType.includes('application/pdf') || !Array.isArray(questionData)) {
                 console.log("[DEBUG] Server sent a file or non-array data, downloading directly...");
@@ -242,12 +242,10 @@ const AdminDashboard = () => {
                 return;
             }
 
-            // Otherwise, generate PDF from JSON questions
-            // Otherwise, generate PDF from JSON questions using html2pdf that natively supports unicode/Tamil encoding
             console.log("[DEBUG] Generating PDF from JSON data using html2pdf...");
             const html2pdfModule = await import('html2pdf.js');
             const html2pdf = html2pdfModule.default || html2pdfModule;
-            
+
             const element = document.createElement('div');
             element.innerHTML = `
                 <div style="padding: 20px; font-family: 'Arial', sans-serif;">
@@ -273,519 +271,618 @@ const AdminDashboard = () => {
                     `).join('')}
                 </div>
             `;
-            
+
             const opt = {
-                margin:       10,
-                filename:     `${bank.title.replace(/\s+/g, '_')}.pdf`,
-                image:        { type: 'jpeg', quality: 0.98 },
-                html2canvas:  { scale: 2 },
-                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                margin: 10,
+                filename: `${bank.title.replace(/\s+/g, '_')}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
             };
-            
+
             html2pdf().from(element).set(opt).save();
             console.log("[DEBUG] PDF download triggered.");
-            
+
         } catch (err) {
-            console.error("[DEBUG] Download Failure Details:", err);
-            const errorMsg = err.response?.data?.message || err.message;
-            alert(`Failed to download or generate PDF: ${errorMsg}`);
+            console.error("Download failed", err);
+            const msg = err.response?.data?.message || err.message;
+            alert("Failed to download or generate PDF: " + msg);
         }
     };
 
-    return (
-        <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-            <div className="p-4 md:p-8 lg:p-12">
 
-                {/* Header for all pages */}
-                <header className="flex flex-col md:flex-row justify-between items-start mb-8 lg:mb-10 gap-6">
-                    <div>
-                        {activeTab === 'Overview' && (
-                            <>
-                                <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Dashboard Overview</h2>
-                                <p className="text-slate-500">Monitor global performance and insights</p>
-                            </>
-                        )}
-                        {activeTab === 'Question Vault' && (
-                            <>
-                                <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Question Bank Vault</h2>
-                                <p className="text-slate-500">Manage your question repositories</p>
-                            </>
-                        )}
-                        {activeTab === 'Students' && (
-                            <>
-                                <h2 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold text-[#0F172A] mb-1 md:mb-2">Student Management</h2>
-                                <p className="text-slate-500 text-sm md:text-base">Track individual student progress</p>
-                            </>
-                        )}
-                        {activeTab === 'Requests' && (
-                            <>
-                                <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Re-attempt Requests</h2>
-                                <p className="text-slate-500">Manage student requests for test re-takes</p>
-                            </>
-                        )}
+return (
+    <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+        <div className="p-4 md:p-8 lg:p-12">
 
-                        {activeTab === 'Approvals' && (
-                            <>
-                                <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Registration Approvals</h2>
-                                <p className="text-slate-500">Approve or reject new user registrations</p>
-                            </>
-                        )}
-                        {activeTab === 'Reviews' && (
-                            <>
-                                <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Review Management</h2>
-                                <p className="text-slate-500">Moderate and approve student testimonials</p>
-                            </>
-                        )}
+            {/* Header for all pages */}
+            <header className="flex flex-col md:flex-row justify-between items-start mb-8 lg:mb-10 gap-6">
+                <div>
+                    {activeTab === 'Overview' && (
+                        <>
+                            <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Dashboard Overview</h2>
+                            <p className="text-slate-500">Monitor global performance and insights</p>
+                        </>
+                    )}
+                    {activeTab === 'Question Vault' && (
+                        <>
+                            <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Question Bank Vault</h2>
+                            <p className="text-slate-500">Manage your question repositories</p>
+                        </>
+                    )}
+                    {activeTab === 'Students' && (
+                        <>
+                            <h2 className="text-2xl md:text-3xl lg:text-4xl font-serif font-bold text-[#0F172A] mb-1 md:mb-2">Student Management</h2>
+                            <p className="text-slate-500 text-sm md:text-base">Track individual student progress</p>
+                        </>
+                    )}
+                    {activeTab === 'Requests' && (
+                        <>
+                            <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Re-attempt Requests</h2>
+                            <p className="text-slate-500">Manage student requests for test re-takes</p>
+                        </>
+                    )}
+
+                    {activeTab === 'Approvals' && (
+                        <>
+                            <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Registration Approvals</h2>
+                            <p className="text-slate-500">Approve or reject new user registrations</p>
+                        </>
+                    )}
+                    {activeTab === 'Reviews' && (
+                        <>
+                            <h2 className="text-4xl font-serif font-bold text-[#0F172A] mb-2">Review Management</h2>
+                            <p className="text-slate-500">Moderate and approve student testimonials</p>
+                        </>
+                    )}
+                </div>
+
+                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+                    {activeTab === 'Question Vault' && (
+                        <button
+                            onClick={() => setIsUploadModalOpen(true)}
+                            className="w-full sm:w-auto bg-[#C2410C] hover:bg-[#9a3412] text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-orange-900/10"
+                        >
+                            <Upload size={16} /> Upload New
+                        </button>
+                    )}
+                    {/* Tab buttons removed as they are now in the sidebar */}
+                </div>
+            </header>
+
+            {/* CONTENT: OVERVIEW */}
+            {activeTab === 'Overview' && (
+                <div className="space-y-12">
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
+                        <OverviewCard icon={<Users size={24} className="text-blue-500" />} value={stats.totalStudents} label="Total Students" />
+                        <OverviewCard icon={<FileText size={24} className="text-teal-500" />} value={stats.totalTests} label="Total Tests" />
+                        <OverviewCard icon={<TrendingUp size={24} className="text-orange-500" />} value={`${stats.globalAverage}%`} label="Global Average" />
+                        <OverviewCard icon={<Calendar size={24} className="text-green-500" />} value={stats.activeToday} label="Active Today" />
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                        {activeTab === 'Question Vault' && (
-                            <button
-                                onClick={() => setIsUploadModalOpen(true)}
-                                className="w-full sm:w-auto bg-[#C2410C] hover:bg-[#9a3412] text-white px-4 py-2.5 rounded-xl font-semibold text-sm flex items-center justify-center gap-2 transition-colors shadow-lg shadow-orange-900/10"
-                            >
-                                <Upload size={16} /> Upload New
-                            </button>
-                        )}
-                        {/* Tab buttons removed as they are now in the sidebar */}
-                    </div>
-                </header>
-
-                {/* CONTENT: OVERVIEW */}
-                {activeTab === 'Overview' && (
-                    <div className="space-y-12">
-                        {/* Stats Cards */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-                            <OverviewCard icon={<Users size={24} className="text-blue-500" />} value={stats.totalStudents} label="Total Students" />
-                            <OverviewCard icon={<FileText size={24} className="text-teal-500" />} value={stats.totalTests} label="Total Tests" />
-                            <OverviewCard icon={<TrendingUp size={24} className="text-orange-500" />} value={`${stats.globalAverage}%`} label="Global Average" />
-                            <OverviewCard icon={<Calendar size={24} className="text-green-500" />} value={stats.activeToday} label="Active Today" />
-                        </div>
-
-                        {/* Charts */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-                             <div>
-                                <h3 className="text-xl font-serif font-bold text-gray-800 mb-6">Performance Distribution</h3>
-                                <div className="h-64">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <BarChart data={chartData.performanceDistribution} barSize={40}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                            <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} />
-                                            <YAxis />
-                                            <Tooltip />
-                                            <Bar dataKey="score" fill="#0D9488" radius={[4, 4, 0, 0]} />
-                                        </BarChart>
-                                    </ResponsiveContainer>
-                                </div>
-                            </div>
-                            <div>
-                                <h3 className="text-xl font-serif font-bold text-gray-800 mb-6">Monthly Performance Trend</h3>
-                                <div className="h-64">
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart data={chartData.performanceTrend}>
-                                            <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                            <XAxis dataKey="month" />
-                                            <YAxis />
-                                            <Tooltip />
-                                            <Line type="monotone" dataKey="score" stroke="#C2410C" strokeWidth={3} dot={{ r: 4 }} />
-                                        </LineChart>
-                                    </ResponsiveContainer>
-                                </div>
+                    {/* Charts */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+                        <div>
+                            <h3 className="text-xl font-serif font-bold text-gray-800 mb-6">Performance Distribution</h3>
+                            <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={chartData.performanceDistribution} barSize={40}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                        <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} />
+                                        <YAxis />
+                                        <Tooltip />
+                                        <Bar dataKey="score" fill="#0D9488" radius={[4, 4, 0, 0]} />
+                                    </BarChart>
+                                </ResponsiveContainer>
                             </div>
                         </div>
+                        <div>
+                            <h3 className="text-xl font-serif font-bold text-gray-800 mb-6">Monthly Performance Trend</h3>
+                            <div className="h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={chartData.performanceTrend}>
+                                        <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                                        <XAxis dataKey="month" />
+                                        <YAxis />
+                                        <Tooltip />
+                                        <Line type="monotone" dataKey="score" stroke="#C2410C" strokeWidth={3} dot={{ r: 4 }} />
+                                    </LineChart>
+                                </ResponsiveContainer>
+                            </div>
+                        </div>
                     </div>
-                )}
+                </div>
+            )}
 
-                {/* CONTENT: QUESTION VAULT */}
-                {activeTab === 'Question Vault' && (
+            {/* CONTENT: QUESTION VAULT */}
+            {activeTab === 'Question Vault' && (
+                <div>
+                    <div className="mb-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+                        <div className="relative w-full md:w-96">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder={`Search question banks...`}
+                                className="pl-10 pr-4 py-2 w-full rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="space-y-6">
+                        {questionBanks.length > 0 ?
+                            questionBanks.map((bank) => (
+                                <div key={bank._id || bank.id} className="bg-white p-4 md:p-6 rounded-xl border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 hover:shadow-sm transition-shadow">
+                                    <div className="w-full">
+                                        <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2 md:mb-1">
+                                            <h4 className="text-base md:text-lg font-bold text-slate-900">{bank.title}</h4>
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${bank.difficulty === 'Hard' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
+                                                }`}>
+                                                {bank.difficulty}
+                                            </span>
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider ${bank.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : bank.category === 'MRB' ? 'bg-orange-100 text-orange-700' : 'bg-teal-100 text-teal-700'}`}>
+                                                {bank.category || 'Both'}
+                                            </span>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-500 font-medium">
+                                            <span>{bank.questionsCount || bank.questions} questions</span>
+                                            <span>Uploaded {new Date(bank.createdAt || bank.uploaded).toLocaleDateString()}</span>
+                                            <span>{bank.attempts} attempts</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex flex-wrap items-center gap-2 md:gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter md:hidden">Status:</span>
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-tighter hidden md:block">Test Status</span>
+                                                <button
+                                                    onClick={() => handleToggleStatus(bank)}
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${bank.status === 'published' ? 'bg-green-500' : 'bg-slate-300'}`}
+                                                >
+                                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${bank.status === 'published' ? 'translate-x-6' : 'translate-x-1'}`} />
+                                                </button>
+                                                <span className={`text-[10px] font-bold mt-1 uppercase hidden md:block ${bank.status === 'published' ? 'text-green-600' : 'text-slate-400'}`}>
+                                                    {bank.status === 'published' ? 'Active' : 'Disabled'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="w-px h-8 bg-slate-100 mx-1 hidden md:block"></div>
+                                        <div className="flex items-center gap-1">
+                                            <button 
+                                                onClick={() => {
+                                                    setStatsBank(bank);
+                                                    fetchBankStats(bank._id);
+                                                }} 
+                                                className="p-2 text-slate-400 hover:text-indigo-600 transition-colors" 
+                                                title="Viewers & Attempts"
+                                            >
+                                                <Eye size={18} />
+                                            </button>
+                                            <button onClick={() => handleDownload(bank)} className="p-2 text-slate-400 hover:text-teal-600 transition-colors" title="Download"><Download size={18} /></button>
+                                            <button onClick={() => setEditingBank(bank)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Edit"><Edit size={18} /></button>
+                                            <button onClick={() => handleDelete(bank._id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Delete"><Trash2 size={18} /></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="text-center py-10 text-slate-400">
+                                    No question banks found.
+                                </div>
+                            )}
+                    </div>
+                </div>
+            )
+            }
+
+            {/* CONTENT: STUDENTS */}
+            {
+                activeTab === 'Students' && (
                     <div>
-                        <div className="mb-8 flex flex-col md:flex-row gap-6 items-start md:items-center justify-between">
+                        <div className="mb-8">
                             <div className="relative w-full md:w-96">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                 <input
                                     type="text"
-                                    placeholder={`Search question banks...`}
+                                    placeholder="Search students..."
                                     className="pl-10 pr-4 py-2 w-full rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-sm"
                                 />
                             </div>
                         </div>
 
-                        <div className="space-y-6">
-                            {questionBanks.length > 0 ?
-                                questionBanks.map((bank) => (
-                                        <div key={bank._id || bank.id} className="bg-white p-6 rounded-xl border border-slate-100 flex justify-between items-center hover:shadow-sm transition-shadow">
-                                            <div>
-                                                <div className="flex items-center gap-3 mb-1">
-                                                    <h4 className="text-lg font-bold text-slate-900">{bank.title}</h4>
-                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${bank.difficulty === 'Hard' ? 'bg-red-100 text-red-600' : 'bg-amber-100 text-amber-600'
-                                                        }`}>
-                                                        {bank.difficulty}
-                                                    </span>
-                                                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider ${bank.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : bank.category === 'MRB' ? 'bg-orange-100 text-orange-700' : 'bg-teal-100 text-teal-700'}`}>
-                                                        {bank.category || 'Both'}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-6 text-xs text-slate-500 font-medium">
-                                                    <span>{bank.questionsCount || bank.questions} questions</span>
-                                                    <span>Uploaded {new Date(bank.createdAt || bank.uploaded).toLocaleDateString()}</span>
-                                                    <span 
-                                                        className="cursor-pointer hover:text-indigo-600 transition-colors underline decoration-dotted"
-                                                        onClick={() => {
-                                                            setStatsBank(bank);
-                                                            fetchBankStats(bank._id);
-                                                        }}
-                                                    >
-                                                        {bank.attempts} students attempted
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex flex-col items-center">
-                                                    <span className="text-[10px] font-bold text-slate-400 mb-1 uppercase tracking-tighter">Test Status</span>
-                                                    <button
-                                                        onClick={() => handleToggleStatus(bank)}
-                                                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${bank.status === 'published' ? 'bg-green-500' : 'bg-slate-300'}`}
-                                                    >
-                                                        <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${bank.status === 'published' ? 'translate-x-6' : 'translate-x-1'}`} />
-                                                    </button>
-                                                    <span className={`text-[10px] font-bold mt-1 uppercase ${bank.status === 'published' ? 'text-green-600' : 'text-slate-400'}`}>
-                                                        {bank.status === 'published' ? 'Active' : 'Disabled'}
-                                                    </span>
-                                                </div>
-                                                <div className="w-px h-10 bg-slate-100 mx-1"></div>
-                                                <button 
-                                                    onClick={() => {
-                                                        setStatsBank(bank);
-                                                        fetchBankStats(bank._id);
-                                                    }} 
-                                                    className="p-2 text-slate-400 hover:text-indigo-600 transition-colors" 
-                                                    title="Viewers & Attempts"
-                                                >
-                                                    <Eye size={18} />
-                                                </button>
-                                                <button onClick={() => handleDownload(bank)} className="p-2 text-slate-400 hover:text-teal-600 transition-colors" title="Download"><Download size={18} /></button>
-
-                                                <button onClick={() => setEditingBank(bank)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Edit"><Edit size={18} /></button>
-                                                <button onClick={() => handleDelete(bank._id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Delete"><Trash2 size={18} /></button>
-                                            </div>
-                                        </div>
-                                    )) : (
-                                    <div className="text-center py-10 text-slate-400">
-                                        No question banks found.
-                                    </div>
-                                )}
-                        </div>
-                    </div>
-                )
-                }
-
-                {/* CONTENT: STUDENTS */}
-                {
-                    activeTab === 'Students' && (
-                        <div>
-                            <div className="mb-8">
-                                <div className="relative w-full md:w-96">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                    <input
-                                        type="text"
-                                        placeholder="Search students..."
-                                        className="pl-10 pr-4 py-2 w-full rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-sm"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden overflow-x-auto">
-                                <table className="w-full text-left min-w-[800px] md:min-w-full">
-                                    <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
-                                        <tr>
-                                            <th className="px-6 py-4">Student</th>
-                                            <th className="px-6 py-4 text-center">Tests</th>
-                                            <th className="px-6 py-4 text-center">Avg Score</th>
-                                            <th className="px-6 py-4 text-center">Trend</th>
-                                            <th className="px-6 py-4">Last Active</th>
-                                            <th className="px-6 py-4 text-right">Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 text-sm">
-                                        {users.filter(u => (u.role || 'student').toLowerCase() === 'student').map((user, i) => (
-                                            <tr key={i} className="hover:bg-slate-50 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <div>
-                                                        <p className="font-bold text-slate-900">{user.fullName}</p>
-                                                        <p className="text-slate-400 text-xs">{user.email}</p>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 text-center font-medium">{user.testsCompleted || 0}</td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <span className="bg-teal-100 text-teal-700 px-2 py-1 rounded font-bold text-xs">{user.averageScore || '-'}%</span>
-                                                </td>
-                                                <td className="px-6 py-4 text-center">
-                                                    <div className="flex justify-center text-green-500"><TrendingUp size={16} /></div>
-                                                </td>
-                                                <td className="px-6 py-4 text-slate-500 font-medium">
-                                                    {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
-                                                </td>
-                                                <td className="px-6 py-4 text-right">
-                                                    <div className="flex justify-end gap-2">
-                                                        <button onClick={() => setSelectedStudent(user)} className="text-blue-600 font-bold hover:underline text-xs">View</button>
-                                                        <button onClick={() => handleDeleteStudent(user._id)} className="text-red-600 font-bold hover:underline text-xs">Delete</button>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                        {users.filter(u => (u.role || 'student').toLowerCase() === 'student').length === 0 && (
-                                            <tr>
-                                                <td colSpan="6" className="text-center py-8 text-slate-400">
-                                                    No students found. (Total Users fetched: {users.length})
-                                                </td>
-                                            </tr>
-                                        )}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    )
-                }
-                {/* CONTENT: REQUESTS */}
-                {
-                    activeTab === 'Requests' && (
-                        <div className="space-y-6">
-                            <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
-                                <button
-                                    onClick={() => setRequestType('registration')}
-                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${requestType === 'registration' ? 'bg-white text-[#C2410C] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                >
-                                    Registration ({pendingRegistrations.length})
-                                </button>
-                                <button
-                                    onClick={() => setRequestType('reattempt')}
-                                    className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${requestType === 'reattempt' ? 'bg-white text-[#C2410C] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                                >
-                                    Re-attempts ({reattemptRequests.filter(r => r.status === 'pending').length})
-                                </button>
-                            </div>
-
-                            <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-                                {requestType === 'registration' ? (
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
-                                            <tr>
-                                                <th className="px-6 py-4">User Details</th>
-                                                <th className="px-6 py-4">Role</th>
-                                                <th className="px-6 py-4 text-center">Course</th>
-                                                <th className="px-6 py-4">Registration Date</th>
-                                                <th className="px-6 py-4 text-right">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 text-sm">
-                                            {pendingRegistrations.map((user, i) => (
-                                                <tr key={i} className="hover:bg-slate-50">
-                                                    <td className="px-6 py-4">
-                                                        <p className="font-bold text-slate-900">{user.fullName}</p>
-                                                        <p className="text-xs text-slate-400">{user.email}</p>
-                                                    </td>
-                                                    <td className="px-6 py-4 uppercase font-bold text-xs text-slate-500">
-                                                        {user.role}
-                                                    </td>
-                                                    <td className="px-6 py-4 text-center">
-                                                        <span className={`px-2 py-1 rounded-full text-[10px] font-black tracking-wider ${user.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700'}`}>
-                                                            {user.category || 'MRB'}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-slate-500">{new Date(user.createdAt).toLocaleDateString()}</td>
-                                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
-                                                        <button onClick={() => setSelectedStudent(user)} className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center gap-1">
-                                                            <Users size={14} /> View Details
-                                                        </button>
-                                                        <button onClick={() => handleApprovalAction(user._id, 'approve')} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 transition-colors flex items-center gap-1">
-                                                            <Check size={14} /> Approve
-                                                        </button>
-                                                        <button onClick={() => handleApprovalAction(user._id, 'reject')} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors flex items-center gap-1">
-                                                            <X size={14} /> Reject
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {pendingRegistrations.length === 0 && (
-                                                <tr>
-                                                    <td colSpan="4" className="text-center py-10 text-slate-400 font-medium italic">No pending registrations found</td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                ) : (
-                                    <table className="w-full text-left">
-                                        <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
-                                            <tr>
-                                                <th className="px-6 py-4">Student</th>
-                                                <th className="px-6 py-4">Assessment</th>
-                                                <th className="px-6 py-4">Date</th>
-                                                <th className="px-6 py-4 text-right">Action</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 text-sm">
-                                            {reattemptRequests.filter(r => r.status === 'pending').map((req, i) => (
-                                                <tr key={i} className="hover:bg-slate-50">
-                                                    <td className="px-6 py-4">
-                                                        <p className="font-bold text-slate-900">{req.userId?.fullName}</p>
-                                                        <p className="text-xs text-slate-400">{req.userId?.email}</p>
-                                                    </td>
-                                                    <td className="px-6 py-4">
-                                                        <p className="font-medium text-slate-700">{req.testId?.title}</p>
-                                                    </td>
-                                                    <td className="px-6 py-4 text-slate-500">{new Date(req.createdAt).toLocaleDateString()}</td>
-                                                    <td className="px-6 py-4 text-right flex justify-end gap-2">
-                                                        <button onClick={() => handleReattemptAction(req._id, 'approved')} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 transition-colors flex items-center gap-1">
-                                                            <Check size={14} /> Approve
-                                                        </button>
-                                                        <button onClick={() => handleReattemptAction(req._id, 'rejected')} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors flex items-center gap-1">
-                                                            <X size={14} /> Reject
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                            {reattemptRequests.filter(r => r.status === 'pending').length === 0 && (
-                                                <tr>
-                                                    <td colSpan="4" className="text-center py-10 text-slate-400 font-medium italic">No pending re-attempt requests</td>
-                                                </tr>
-                                            )}
-                                        </tbody>
-                                    </table>
-                                )}
-                            </div>
-                        </div>
-                    )
-                }
-                {/* CONTENT: REVIEWS */}
-                {activeTab === 'Reviews' && (
-                    <div className="space-y-6">
-                        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+                        {/* DESKTOP VIEW */}
+                        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hidden md:block">
                             <table className="w-full text-left">
-                                <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                                <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
                                     <tr>
                                         <th className="px-6 py-4">Student</th>
-                                        <th className="px-6 py-4">Review content</th>
-                                        <th className="px-6 py-4 text-center">Rating</th>
-                                        <th className="px-6 py-4">Status</th>
-                                        <th className="px-6 py-4 text-right">Action</th>
+                                        <th className="px-6 py-4 text-center">Tests</th>
+                                        <th className="px-6 py-4 text-center">Avg Score</th>
+                                        <th className="px-6 py-4 text-center">Trend</th>
+                                        <th className="px-6 py-4">Last Active</th>
+                                        <th className="px-6 py-4 text-right">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-sm">
-                                    {reviews.map((review, i) => (
-                                        <tr key={i} className="hover:bg-slate-50">
+                                    {users.filter(u => (u.role || 'student').toLowerCase() === 'student').map((user, i) => (
+                                        <tr key={i} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4">
-                                                <p className="font-bold text-slate-900">{review.name}</p>
-                                                <p className="text-xs text-slate-400">{review.userId?.email || 'N/A'}</p>
-                                            </td>
-                                            <td className="px-6 py-4 max-w-md">
-                                                {editingReview?._id === review._id ? (
-                                                    <div className="flex flex-col gap-2">
-                                                        <textarea
-                                                            value={editingReview.text}
-                                                            onChange={(e) => setEditingReview({ ...editingReview, text: e.target.value })}
-                                                            className="w-full p-2 border rounded-lg text-sm"
-                                                            rows="3"
-                                                        />
-                                                        <div className="flex gap-2">
-                                                            <button onClick={() => requestUpdateReview(review._id, editingReview.text)} className="text-green-600 text-xs font-bold hover:underline">Save</button>
-                                                            <button onClick={() => setEditingReview(null)} className="text-red-500 text-xs font-bold hover:underline">Cancel</button>
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-slate-600 truncate" title={review.text}>{review.text}</p>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <div className="flex justify-center gap-0.5">
-                                                    {[...Array(5)].map((_, idx) => (
-                                                        <Star key={idx} size={12} className={idx < review.rating ? "text-amber-400 fill-amber-400" : "text-slate-200"} />
-                                                    ))}
+                                                <div>
+                                                    <p className="font-bold text-slate-900">{user.fullName}</p>
+                                                    <p className="text-slate-400 text-xs">{user.email}</p>
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${review.status === 'approved' ? 'bg-green-100 text-green-700' :
-                                                    review.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
-                                                    }`}>
-                                                    {review.status}
-                                                </span>
+                                            <td className="px-6 py-4 text-center font-medium">{user.testsCompleted || 0}</td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="bg-teal-100 text-teal-700 px-2 py-1 rounded font-bold text-xs">{user.averageScore || '-'}%</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <div className="flex justify-center text-green-500"><TrendingUp size={16} /></div>
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-500 font-medium">
+                                                {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
                                             </td>
                                             <td className="px-6 py-4 text-right">
                                                 <div className="flex justify-end gap-2">
-                                                    <button onClick={() => setEditingReview(review)} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors border border-blue-100" title="Edit">
-                                                        <Edit size={16} />
-                                                    </button>
-                                                    {review.status !== 'approved' && (
-                                                        <button onClick={() => handleReviewAction(review._id, 'approved')} className="text-green-600 hover:bg-green-50 p-1.5 rounded-lg transition-colors border border-green-100" title="Approve">
-                                                            <Check size={16} />
-                                                        </button>
-                                                    )}
-                                                    {review.status !== 'rejected' && review.status !== 'approved' && (
-                                                        <button onClick={() => handleReviewAction(review._id, 'rejected')} className="text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg transition-colors border border-amber-100" title="Reject">
-                                                            <X size={16} />
-                                                        </button>
-                                                    )}
-                                                    <button onClick={() => handleReviewDelete(review._id)} className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors border border-red-100" title="Delete">
-                                                        <Trash2 size={16} />
-                                                    </button>
+                                                    <button onClick={() => setSelectedStudent(user)} className="text-blue-600 font-bold hover:underline text-xs">View</button>
+                                                    <button onClick={() => handleDeleteStudent(user._id)} className="text-red-600 font-bold hover:underline text-xs">Delete</button>
                                                 </div>
                                             </td>
                                         </tr>
                                     ))}
-                                    {reviews.length === 0 && (
+                                    {users.filter(u => (u.role || 'student').toLowerCase() === 'student').length === 0 && (
                                         <tr>
-                                            <td colSpan="5" className="text-center py-10 text-slate-400">No reviews found</td>
+                                            <td colSpan="6" className="text-center py-8 text-slate-400">
+                                                No students found. (Total Users fetched: {users.length})
+                                            </td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* MOBILE VIEW */}
+                        <div className="space-y-4 block md:hidden">
+                            {users.filter(u => (u.role || 'student').toLowerCase() === 'student').length > 0 ? (
+                                users.filter(u => (u.role || 'student').toLowerCase() === 'student').map((user, i) => (
+                                    <div key={i} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-3">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <p className="font-bold text-slate-900">{user.fullName}</p>
+                                                <p className="text-slate-400 text-xs">{user.email}</p>
+                                            </div>
+                                            <span className="text-[10px] text-slate-500">
+                                                {user.lastActive ? new Date(user.lastActive).toLocaleDateString() : 'Never'}
+                                            </span>
+                                        </div>
+
+                                        <div className="flex flex-wrap gap-2 text-xs font-medium">
+                                            <div className="bg-slate-50 px-3 py-1.5 rounded-lg flex-1">
+                                                <span className="text-slate-400 block mb-0.5 text-[10px] uppercase">Tests</span>
+                                                {user.testsCompleted || 0}
+                                            </div>
+                                            <div className="bg-teal-50 px-3 py-1.5 rounded-lg flex-1 text-teal-700">
+                                                <span className="text-teal-400 block mb-0.5 text-[10px] uppercase">Avg Score</span>
+                                                {user.averageScore || '-'}%
+                                            </div>
+                                            <div className="bg-green-50 px-3 py-1.5 rounded-lg flex-1 text-green-600 flex flex-col justify-center items-center">
+                                                <span className="text-green-400 block mb-0.5 text-[10px] uppercase">Trend</span>
+                                                <TrendingUp size={14} />
+                                            </div>
+                                        </div>
+
+                                        <div className="flex justify-end gap-3 pt-2 border-t border-slate-50">
+                                            <button onClick={() => setSelectedStudent(user)} className="text-blue-600 font-bold hover:underline text-xs p-1">View Details</button>
+                                            <button onClick={() => handleDeleteStudent(user._id)} className="text-red-600 font-bold hover:underline text-xs p-1">Delete</button>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="bg-white p-6 rounded-xl border border-slate-100 text-center text-slate-400 font-medium text-sm">
+                                    No students found.
+                                </div>
+                            )}
+                        </div>
                     </div>
-                )}
+                )
+            }
+            {/* CONTENT: REQUESTS */}
+            {
+                activeTab === 'Requests' && (
+                    <div className="space-y-6">
+                        <div className="flex bg-slate-100 p-1 rounded-xl w-fit">
+                            <button
+                                onClick={() => setRequestType('registration')}
+                                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${requestType === 'registration' ? 'bg-white text-[#C2410C] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                Registration ({pendingRegistrations.length})
+                            </button>
+                            <button
+                                onClick={() => setRequestType('reattempt')}
+                                className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${requestType === 'reattempt' ? 'bg-white text-[#C2410C] shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                            >
+                                Re-attempts ({reattemptRequests.filter(r => r.status === 'pending').length})
+                            </button>
+                        </div>
+
+                        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden overflow-x-auto shadow-sm">
+                            {requestType === 'registration' ? (
+                                <table className="w-full text-left min-w-[800px] md:min-w-full">
+                                    <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                        <tr>
+                                            <th className="px-6 py-4">User Details</th>
+                                            <th className="px-6 py-4">Role</th>
+                                            <th className="px-6 py-4 text-center">Course</th>
+                                            <th className="px-6 py-4">Registration Date</th>
+                                            <th className="px-6 py-4 text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 text-sm">
+                                        {pendingRegistrations.map((user, i) => (
+                                            <tr key={i} className="hover:bg-slate-50">
+                                                <td className="px-6 py-4">
+                                                    <p className="font-bold text-slate-900">{user.fullName}</p>
+                                                    <p className="text-xs text-slate-400">{user.email}</p>
+                                                </td>
+                                                <td className="px-6 py-4 uppercase font-bold text-xs text-slate-500">
+                                                    {user.role}
+                                                </td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-black tracking-wider ${user.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                        {user.category || 'MRB'}
+                                                    </span>
+                                                </td>
+                                                <td className="px-6 py-4 text-slate-500">{new Date(user.createdAt).toLocaleDateString()}</td>
+                                                <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                    <button onClick={() => setSelectedStudent(user)} className="bg-blue-50 text-blue-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center gap-1">
+                                                        <Users size={14} /> View Details
+                                                    </button>
+                                                    <button onClick={() => handleApprovalAction(user._id, 'approve')} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 transition-colors flex items-center gap-1">
+                                                        <Check size={14} /> Approve
+                                                    </button>
+                                                    <button onClick={() => handleApprovalAction(user._id, 'reject')} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors flex items-center gap-1">
+                                                        <X size={14} /> Reject
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {pendingRegistrations.length === 0 && (
+                                            <tr>
+                                                <td colSpan="5" className="text-center py-10 text-slate-400 font-medium italic">No pending registrations found</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            ) : (
+                                <table className="w-full text-left min-w-[800px] md:min-w-full">
+                                    <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
+                                        <tr>
+                                            <th className="px-6 py-4">Student</th>
+                                            <th className="px-6 py-4">Assessment</th>
+                                            <th className="px-6 py-4">Date</th>
+                                            <th className="px-6 py-4 text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 text-sm">
+                                        {reattemptRequests.filter(r => r.status === 'pending').map((req, i) => (
+                                            <tr key={i} className="hover:bg-slate-50">
+                                                <td className="px-6 py-4">
+                                                    <p className="font-bold text-slate-900">{req.userId?.fullName}</p>
+                                                    <p className="text-xs text-slate-400">{req.userId?.email}</p>
+                                                </td>
+                                                <td className="px-6 py-4">
+                                                    <p className="font-medium text-slate-700">{req.testId?.title}</p>
+                                                </td>
+                                                <td className="px-6 py-4 text-slate-500">{new Date(req.createdAt).toLocaleDateString()}</td>
+                                                <td className="px-6 py-4 text-right flex justify-end gap-2">
+                                                    <button onClick={() => handleReattemptAction(req._id, 'approved')} className="bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-green-700 transition-colors flex items-center gap-1">
+                                                        <Check size={14} /> Approve
+                                                    </button>
+                                                    <button onClick={() => handleReattemptAction(req._id, 'rejected')} className="bg-red-50 text-red-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors flex items-center gap-1">
+                                                        <X size={14} /> Reject
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {reattemptRequests.filter(r => r.status === 'pending').length === 0 && (
+                                            <tr>
+                                                <td colSpan="4" className="text-center py-10 text-slate-400 font-medium italic">No pending re-attempt requests</td>
+                                            </tr>
+                                        )}
+                                    </tbody>
+                                </table>
+                            )}
+                        </div>
+                    </div>
+                )
+            }
+            {/* CONTENT: REVIEWS */}
+            {activeTab === 'Reviews' && (
+                <div className="space-y-6">
+                    {/* DESKTOP VIEW */}
+                    <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm hidden md:block">
+                        <table className="w-full text-left">
+                            <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase">
+                                <tr>
+                                    <th className="px-6 py-4">Student</th>
+                                    <th className="px-6 py-4">Review content</th>
+                                    <th className="px-6 py-4 text-center">Rating</th>
+                                    <th className="px-6 py-4">Status</th>
+                                    <th className="px-6 py-4 text-right">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 text-sm">
+                                {reviews.map((review, i) => (
+                                    <tr key={i} className="hover:bg-slate-50">
+                                        <td className="px-6 py-4">
+                                            <p className="font-bold text-slate-900">{review.name}</p>
+                                            <p className="text-xs text-slate-400">{review.userId?.email || 'N/A'}</p>
+                                        </td>
+                                        <td className="px-6 py-4 max-w-md">
+                                            {editingReview?._id === review._id ? (
+                                                <div className="flex flex-col gap-2">
+                                                    <textarea
+                                                        value={editingReview.text}
+                                                        onChange={(e) => setEditingReview({ ...editingReview, text: e.target.value })}
+                                                        className="w-full p-2 border rounded-lg text-sm"
+                                                        rows="3"
+                                                    />
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => requestUpdateReview(review._id, editingReview.text)} className="text-green-600 text-xs font-bold hover:underline">Save</button>
+                                                        <button onClick={() => setEditingReview(null)} className="text-red-500 text-xs font-bold hover:underline">Cancel</button>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p className="text-slate-600 truncate" title={review.text}>{review.text}</p>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <div className="flex justify-center gap-0.5">
+                                                {[...Array(5)].map((_, idx) => (
+                                                    <Star key={idx} size={12} className={idx < review.rating ? "text-amber-400 fill-amber-400" : "text-slate-200"} />
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${review.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                                review.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                                }`}>
+                                                {review.status}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <button onClick={() => setEditingReview(review)} className="text-blue-600 hover:bg-blue-50 p-1.5 rounded-lg transition-colors border border-blue-100" title="Edit">
+                                                    <Edit size={16} />
+                                                </button>
+                                                {review.status !== 'approved' && (
+                                                    <button onClick={() => handleReviewAction(review._id, 'approved')} className="text-green-600 hover:bg-green-50 p-1.5 rounded-lg transition-colors border border-green-100" title="Approve">
+                                                        <Check size={16} />
+                                                    </button>
+                                                )}
+                                                {review.status !== 'rejected' && review.status !== 'approved' && (
+                                                    <button onClick={() => handleReviewAction(review._id, 'rejected')} className="text-amber-600 hover:bg-amber-50 p-1.5 rounded-lg transition-colors border border-amber-100" title="Reject">
+                                                        <X size={16} />
+                                                    </button>
+                                                )}
+                                                <button onClick={() => handleReviewDelete(review._id)} className="text-red-600 hover:bg-red-50 p-1.5 rounded-lg transition-colors border border-red-100" title="Delete">
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {reviews.length === 0 && (
+                                    <tr>
+                                        <td colSpan="5" className="text-center py-10 text-slate-400">No reviews found</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* MOBILE VIEW */}
+                    <div className="space-y-4 block md:hidden">
+                        {reviews.length > 0 ? reviews.map((review, i) => (
+                            <div key={i} className="bg-white p-4 md:p-6 rounded-xl border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:shadow-sm transition-shadow">
+                                <div className="w-full md:w-1/4">
+                                    <p className="font-bold text-slate-900">{review.name}</p>
+                                    <p className="text-xs text-slate-400">{review.userId?.email || 'N/A'}</p>
+                                    <div className="flex items-center gap-0.5 mt-2">
+                                        {[...Array(5)].map((_, idx) => (
+                                            <Star key={idx} size={12} className={idx < review.rating ? "text-amber-400 fill-amber-400" : "text-slate-200"} />
+                                        ))}
+                                    </div>
+                                </div>
+
+                                <div className="w-full md:w-1/2">
+                                    {editingReview?._id === review._id ? (
+                                        <div className="flex flex-col gap-2">
+                                            <textarea
+                                                value={editingReview.text}
+                                                onChange={(e) => setEditingReview({ ...editingReview, text: e.target.value })}
+                                                className="w-full p-2 border rounded-lg text-sm"
+                                                rows="3"
+                                            />
+                                            <div className="flex gap-2">
+                                                <button onClick={() => requestUpdateReview(review._id, editingReview.text)} className="text-green-600 text-xs font-bold hover:underline">Save</button>
+                                                <button onClick={() => setEditingReview(null)} className="text-red-500 text-xs font-bold hover:underline">Cancel</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-slate-600" title={review.text}>{review.text}</p>
+                                    )}
+                                </div>
+
+                                <div className="flex flex-wrap items-center gap-4 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
+                                    <span className={`px-2 py-1 rounded-full text-[10px] font-black uppercase tracking-wider ${review.status === 'approved' ? 'bg-green-100 text-green-700' :
+                                        review.status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                        }`}>
+                                        {review.status}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                        <button onClick={() => setEditingReview(review)} className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-colors" title="Edit">
+                                            <Edit size={16} />
+                                        </button>
+                                        {review.status !== 'approved' && (
+                                            <button onClick={() => handleReviewAction(review._id, 'approved')} className="text-green-600 hover:bg-green-50 p-2 rounded-lg transition-colors" title="Approve">
+                                                <Check size={16} />
+                                            </button>
+                                        )}
+                                        {review.status !== 'rejected' && review.status !== 'approved' && (
+                                            <button onClick={() => handleReviewAction(review._id, 'rejected')} className="text-amber-600 hover:bg-amber-50 p-2 rounded-lg transition-colors" title="Reject">
+                                                <X size={16} />
+                                            </button>
+                                        )}
+                                        <button onClick={() => handleReviewDelete(review._id)} className="text-red-600 hover:bg-red-50 p-2 rounded-lg transition-colors" title="Delete">
+                                            <Trash2 size={16} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )) : (
+                            <div className="bg-white rounded-2xl border border-slate-100 p-10 text-center text-slate-400">
+                                No reviews found
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
 
 
 
-                {/* Modals */}
-                {
-                    isUploadModalOpen && (
-                        <UploadModal
-                            onClose={() => setIsUploadModalOpen(false)}
-                            onSuccess={handleUploadSuccess}
-                            onAuthError={handleLogout}
-                        />
-                    )
-                }
-                {
-                    editingBank && (
-                        <EditModal
-                            bank={editingBank}
-                            onClose={() => setEditingBank(null)}
-                            onSuccess={handleUploadSuccess}
-                        />
-                    )
-                }
-                {
-                    selectedStudent && (
-                        <StudentDetailsModal
-                            student={selectedStudent}
-                            onClose={() => setSelectedStudent(null)}
-                        />
-                    )
-                }
-                {
-                    statsBank && (
-                        <QuestionBankStatsModal 
-                            bank={statsBank}
-                            data={statsData}
-                            loading={loadingStats}
-                            onClose={() => setStatsBank(null)}
-                        />
-                    )
-                }
-            </div >
-
-        </AdminLayout >
-    );
+            {/* Modals */}
+            {isUploadModalOpen && (
+                <UploadModal
+                    onClose={() => setIsUploadModalOpen(false)}
+                    onSuccess={handleUploadSuccess}
+                    onAuthError={handleLogout}
+                />
+            )}
+            {editingBank && (
+                <EditModal
+                    bank={editingBank}
+                    onClose={() => setEditingBank(null)}
+                    onSuccess={handleUploadSuccess}
+                />
+            )}
+            {selectedStudent && (
+                <StudentDetailsModal
+                    student={selectedStudent}
+                    onClose={() => setSelectedStudent(null)}
+                />
+            )}
+            {statsBank && (
+                <QuestionBankStatsModal
+                    bank={statsBank}
+                    data={statsData}
+                    loading={loadingStats}
+                    onClose={() => setStatsBank(null)}
+                />
+            )}
+        </div >
+    </AdminLayout >
+);
 };
 
 // Sub-components
@@ -870,7 +967,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks`, data, {
+            await axios.post(`${API_URL}/api/admin/question-banks`, data, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -922,7 +1019,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.post(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks`, data, {
+            await axios.post(`${API_URL}/api/admin/question-banks`, data, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -1137,7 +1234,7 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
     const [questions, setQuestions] = useState(
         (bank.questions || []).map((q, idx) => ({
             ...q,
-            imagePreview: q.filename ? `${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/uploads/${q.filename}` : null
+            imagePreview: q.filename ? `${API_URL}/uploads/${q.filename}` : null
         }))
     );
     const [loading, setLoading] = useState(false);
@@ -1199,7 +1296,7 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
 
         try {
             const token = localStorage.getItem('token');
-            await axios.put(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${bank._id}`, data, {
+            await axios.put(`${API_URL}/api/admin/question-banks/${bank._id}`, data, {
                 headers: {
                     Authorization: `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -1485,8 +1582,18 @@ const StudentDetailsModal = ({ student, onClose }) => {
     );
 };
 
+
 const QuestionBankStatsModal = ({ bank, data, loading, onClose }) => {
-    const [tab, setTab] = useState('viewers'); // 'viewers' or 'attempts'
+    const [tab, setTab] = useState('viewers');
+
+    // Group attempts by user to show unique students in the attempts list
+    const uniqueAttempts = Object.values((data.attempts || []).reduce((acc, current) => {
+        const uid = current.userId || current.fullName;
+        if (!acc[uid] || new Date(current.date) > new Date(acc[uid].date)) {
+            acc[uid] = current;
+        }
+        return acc;
+    }, {}));
 
     return (
         <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
@@ -1500,17 +1607,17 @@ const QuestionBankStatsModal = ({ bank, data, loading, onClose }) => {
                 </div>
 
                 <div className="flex bg-slate-100 p-1 m-4 rounded-xl items-center">
-                    <button 
+                    <button
                         onClick={() => setTab('viewers')}
                         className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'viewers' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                     >
                         Viewers ({data.viewers?.length || 0})
                     </button>
-                    <button 
+                    <button
                         onClick={() => setTab('attempts')}
                         className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'attempts' ? 'bg-white text-orange-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
                     >
-                        Attempts ({data.attempts?.length || 0})
+                        Attempts ({uniqueAttempts.length})
                     </button>
                 </div>
 
@@ -1545,7 +1652,7 @@ const QuestionBankStatsModal = ({ bank, data, loading, onClose }) => {
                                 </>
                             ) : (
                                 <>
-                                    {data.attempts && data.attempts.length > 0 ? data.attempts.map((a, i) => (
+                                    {uniqueAttempts.length > 0 ? uniqueAttempts.map((a, i) => (
                                         <div key={i} className="flex justify-between items-center p-4 rounded-xl border border-slate-100 bg-white hover:border-orange-100 transition-colors">
                                             <div className="flex items-center gap-4">
                                                 <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 font-bold">
@@ -1558,7 +1665,7 @@ const QuestionBankStatsModal = ({ bank, data, loading, onClose }) => {
                                             </div>
                                             <div className="text-right">
                                                 <div className="flex items-center gap-2 justify-end mb-1">
-                                                    <span className="text-xs font-bold text-slate-400 uppercase">Score:</span>
+                                                    <span className="text-xs font-bold text-slate-400 uppercase">Latest Score:</span>
                                                     <span className={`px-2 py-0.5 rounded text-[10px] font-black ${a.score >= 50 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{a.score}%</span>
                                                 </div>
                                                 <p className="text-[10px] font-medium text-slate-500">{new Date(a.date).toLocaleString()}</p>
