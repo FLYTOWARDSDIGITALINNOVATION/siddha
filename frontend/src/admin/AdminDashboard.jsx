@@ -10,6 +10,7 @@ import {
 } from 'recharts';
 import AdminLayout from '../components/Layout/AdminLayout';
 import html2pdf from 'html2pdf.js';
+const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : "https://jclsiddhaacademy.in");
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('Overview');
@@ -37,7 +38,6 @@ const AdminDashboard = () => {
 
     const navigate = useNavigate();
 
-    const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : "https://jclsiddhaacademy.in");
 
     const fetchAllData = useCallback(async () => {
         try {
