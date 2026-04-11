@@ -442,7 +442,8 @@ app.get('/api/admin/question-banks', verifyEducator, async (req, res) => {
         
         // Count actual attempts per bank to ensure "outside" count matches "inside" list
         const attemptCounts = await Attempt.aggregate([
-            { $group: { _id: "$testId", count: { $sum: 1 } } }
+            { $project: { testIdStr: { $toString: "$testId" } } },
+            { $group: { _id: "$testIdStr", count: { $sum: 1 } } }
         ]);
         
         const countsMap = {};

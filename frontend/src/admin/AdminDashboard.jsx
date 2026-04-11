@@ -9,6 +9,7 @@ import {
     BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import AdminLayout from '../components/Layout/AdminLayout';
+import html2pdf from 'html2pdf.js';
 
 const AdminDashboard = () => {
     const [activeTab, setActiveTab] = useState('Overview');
