@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-    TrendingUp, Calendar, FileText, Trash2, Edit, Download, Upload, X, Check, Search, Users, Star
+    TrendingUp, Calendar, FileText, Trash2, Edit, Download, Upload, X, Check, Search, Users, Star, Eye
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCallback } from 'react';
@@ -30,19 +30,14 @@ const AdminDashboard = () => {
     const [requestType, setRequestType] = useState('registration'); // 'registration' or 'reattempt'
     const [reviews, setReviews] = useState([]);
     const [editingReview, setEditingReview] = useState(null);
+    const [statsBank, setStatsBank] = useState(null);
+    const [statsData, setStatsData] = useState({ viewers: [], attempts: [] });
+    const [loadingStats, setLoadingStats] = useState(false);
+
     const navigate = useNavigate();
-
-    // ... fetchAllData ...
-
-    // ... useEffect ...
-
-    // ... handleLogout ...
-
-    // ... handleUploadSuccess ...
-
-    // ... handleDelete ...
-
-
+    
+    // Determine API URL
+    const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : "https://jclsiddhaacademy.in");
 
 
     const fetchAllData = useCallback(async () => {
@@ -50,23 +45,18 @@ const AdminDashboard = () => {
             const token = localStorage.getItem('token');
             const config = { headers: { Authorization: `Bearer ${token}` } };
 
-            const statsResponse = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/dashboard-stats`, config);
+            const statsResponse = await axios.get(`${API_URL}/api/admin/dashboard-stats`, config);
             setStats(statsResponse.data.stats);
             setChartData(statsResponse.data.charts);
-
-            const usersResponse = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/users`, config);
+            const usersResponse = await axios.get(`${API_URL}/api/admin/users`, config);
             setUsers(usersResponse.data);
-
-            const qbResponse = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks`, config);
+            const qbResponse = await axios.get(`${API_URL}/api/admin/question-banks`, config);
             setQuestionBanks(qbResponse.data);
-
-            const reRes = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reattempt-requests`, config);
+            const reRes = await axios.get(`${API_URL}/api/admin/reattempt-requests`, config);
             setReattemptRequests(reRes.data);
-
-            const pendingRegRes = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/pending-registrations`, config);
+            const pendingRegRes = await axios.get(`${API_URL}/api/admin/pending-registrations`, config);
             setPendingRegistrations(pendingRegRes.data);
-
-            const reviewsRes = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/reviews`, config);
+            const reviewsRes = await axios.get(`${API_URL}/api/admin/reviews`, config);
             setReviews(reviewsRes.data);
 
         } catch (err) {
@@ -76,13 +66,28 @@ const AdminDashboard = () => {
                 navigate('/login');
             }
         }
-    }, [navigate]);
+    }, [navigate, API_URL]);
+
+    const fetchBankStats = async (bankId) => {
+        setLoadingStats(true);
+        try {
+            const token = localStorage.getItem('token');
+            const res = await axios.get(`${API_URL}/api/admin/question-banks/${bankId}/stats`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setStatsData(res.data);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setLoadingStats(false);
+        }
+    };
 
     const handleDeleteStudent = async (id) => {
         if (!window.confirm("Are you sure you want to delete this student and all their records?")) return;
         try {
             const token = localStorage.getItem('token');
-            await axios.delete(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/users/${id}`, {
+            await axios.delete(`${API_URL}/api/admin/users/${id}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             fetchAllData();
@@ -207,130 +212,83 @@ const AdminDashboard = () => {
             alert(`Failed to delete: ${msg}`);
         }
     };
-
+    
     const handleDownload = async (bank) => {
         try {
             const token = localStorage.getItem('token');
-            const response = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${bank._id}/download`, {
+            // Fetch the actual questions for the bank
+            const response = await axios.get(`${API_URL}/api/admin/question-banks/${bank._id}/download`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
             const questionData = response.data;
             
-            // Dynamic import of jspdf and jspdf-autotable to prevent issues with SSR/bundling if any
-            const { jsPDF } = await import('jspdf');
-            await import('jspdf-autotable');
-            
-            const doc = new jsPDF();
-            
-            // Header
-            doc.setFontSize(20);
-            doc.text(bank.title || 'Question Bank', 14, 22);
-            doc.setFontSize(11);
-            doc.setTextColor(100);
-            doc.text(`Difficulty: ${bank.difficulty || 'N/A'} | Total Questions: ${questionData.length}`, 14, 30);
-            
-            doc.setDrawColor(200);
-            doc.line(14, 40, 196, 40);
-            
-            let yPos = 48;
-            
-            questionData.forEach((q, index) => {
-                // Check if we need a new page
-                if (yPos > 270) {
-                    doc.addPage();
-                    yPos = 20;
-                }
-                
-                doc.setFontSize(12);
-                doc.setTextColor(0);
-                doc.setFont("helvetica", "bold");
-                
-                const questionText = `${index + 1}. ${q.question}`;
-                const splitQuestion = doc.splitTextToSize(questionText, 180);
-                doc.text(splitQuestion, 14, yPos);
-                yPos += (splitQuestion.length * 6) + 2;
-                
-                doc.setFont("helvetica", "normal");
-                doc.setFontSize(11);
-                
-                if (q.options && Array.isArray(q.options)) {
-                    q.options.forEach((opt, optIndex) => {
-                        const optLetter = String.fromCharCode(97 + optIndex); // a, b, c, d...
-                        const optText = `${optLetter}) ${opt}`;
-                        const splitOpt = doc.splitTextToSize(optText, 170);
-                        
-                        // Check pagination inside options
-                        if (yPos > 280) {
-                            doc.addPage();
-                            yPos = 20;
-                        }
-                        
-                        doc.text(splitOpt, 20, yPos);
-                        yPos += (splitOpt.length * 6);
-                    });
-                }
-                
-                yPos += 2;
-                
-                // Add Answer
-                if (q.answer !== undefined) {
-                    // Check pagination for answer
-                    if (yPos > 280) {
-                        doc.addPage();
-                        yPos = 20;
-                    }
-                    
-                    doc.setFont("helvetica", "italic");
-                    doc.setTextColor(0, 128, 0); // Green color for answer
-                    
-                    let answerText = "Answer: ";
-                    if (typeof q.answer === 'number' && q.options) {
-                        answerText += `${String.fromCharCode(97 + q.answer)}) ${q.options[q.answer]}`;
-                    } else {
-                        answerText += q.answer;
-                    }
-                    
-                    doc.text(answerText, 20, yPos);
-                    yPos += 8;
-                }
-                
-                doc.setTextColor(0);
-                yPos += 4; // Space between questions
-            });
-            
-            // Add page numbers
-            const pageCount = doc.internal.getNumberOfPages();
-            for(let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(10);
-                doc.setTextColor(150);
-                doc.text(`Page ${i} of ${pageCount}`, doc.internal.pageSize.width / 2, 290, { align: 'center' });
+            // If the server returned a file (blob) instead of JSON questions, handle as direct download
+            const contentType = (response.headers['content-type'] || response.headers['Content-Type'] || "");
+            if (contentType.includes('application/octet-stream') || contentType.includes('application/pdf') || !Array.isArray(questionData)) {
+                console.log("[DEBUG] Server sent a file or non-array data, downloading directly...");
+                const blobResponse = await axios.get(`${API_URL}/api/admin/question-banks/${bank._id}/download`, {
+                    headers: { Authorization: `Bearer ${token}` },
+                    responseType: 'blob'
+                });
+                const url = window.URL.createObjectURL(new Blob([blobResponse.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', bank.filename || `${bank.title.replace(/\s+/g, '_')}.pdf`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+                return;
             }
+
+            // Otherwise, generate PDF from JSON questions
+            // Otherwise, generate PDF from JSON questions using html2pdf that natively supports unicode/Tamil encoding
+            console.log("[DEBUG] Generating PDF from JSON data using html2pdf...");
+            const html2pdfModule = await import('html2pdf.js');
+            const html2pdf = html2pdfModule.default || html2pdfModule;
             
-            doc.save(`${bank.filename ? bank.filename.replace('.json', '') : bank.title.replace(/\s+/g, '_')}.pdf`);
+            const element = document.createElement('div');
+            element.innerHTML = `
+                <div style="padding: 20px; font-family: 'Arial', sans-serif;">
+                    <h2 style="text-align: center; color: #1e3a8a; margin-bottom: 5px;">${bank.title}</h2>
+                    <p style="text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 20px;">
+                        Difficulty: ${bank.difficulty || 'N/A'} | Total Questions: ${questionData.length}
+                    </p>
+                    <hr style="margin-bottom: 25px; border: 1px solid #e5e7eb;"/>
+                    ${questionData.map((q, i) => `
+                        <div style="margin-bottom: 20px; page-break-inside: avoid;">
+                            <p style="font-weight: 600; font-size: 14px; margin-bottom: 10px;">${i + 1}. ${q.question}</p>
+                            ${q.options && Array.isArray(q.options) ? q.options.map((opt, j) => `
+                                <p style="margin-left: 20px; font-size: 13px; margin-bottom: 4px; color: #374151;">
+                                    ${String.fromCharCode(97 + j)}) ${opt}
+                                </p>
+                            `).join('') : ''}
+                            ${q.answer !== undefined ? `
+                                <p style="margin-left: 20px; color: #16a34a; font-size: 13px; font-style: italic; margin-top: 8px;">
+                                    Answer: ${typeof q.answer === 'number' && q.options ? q.options[q.answer] : q.answer}
+                                </p>
+                            ` : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            const opt = {
+                margin:       10,
+                filename:     `${bank.title.replace(/\s+/g, '_')}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2 },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            
+            html2pdf().from(element).set(opt).save();
+            console.log("[DEBUG] PDF download triggered.");
             
         } catch (err) {
-            console.error("Download failed", err);
-            alert(`Failed to download JSON, trying fallback...`);
-            
-            // Fallback to old json download if PDF generation fails
-            try {
-               const token = localStorage.getItem('token');
-               const response = await axios.get(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/admin/question-banks/${bank._id}/download`, {
-                   headers: { Authorization: `Bearer ${token}` },
-                   responseType: 'blob'
-               });
-               const url = window.URL.createObjectURL(new Blob([response.data]));
-               const link = document.createElement('a');
-               link.href = url;
-               link.setAttribute('download', bank.filename || `${bank.title}.json`);
-               document.body.appendChild(link);
-               link.click();
-               link.remove();
-            } catch (fallbackErr) {
-               alert(`Fallback failed: ${fallbackErr.message}`);
-            }
+            console.error("[DEBUG] Download Failure Details:", err);
+            const errorMsg = err.response?.data?.message || err.message;
+            alert(`Failed to download or generate PDF: ${errorMsg}`);
         }
     };
 
@@ -470,7 +428,15 @@ const AdminDashboard = () => {
                                                 <div className="flex items-center gap-6 text-xs text-slate-500 font-medium">
                                                     <span>{bank.questionsCount || bank.questions} questions</span>
                                                     <span>Uploaded {new Date(bank.createdAt || bank.uploaded).toLocaleDateString()}</span>
-                                                    <span>{bank.attempts} students attempted</span>
+                                                    <span 
+                                                        className="cursor-pointer hover:text-indigo-600 transition-colors underline decoration-dotted"
+                                                        onClick={() => {
+                                                            setStatsBank(bank);
+                                                            fetchBankStats(bank._id);
+                                                        }}
+                                                    >
+                                                        {bank.attempts} students attempted
+                                                    </span>
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-4">
@@ -487,7 +453,18 @@ const AdminDashboard = () => {
                                                     </span>
                                                 </div>
                                                 <div className="w-px h-10 bg-slate-100 mx-1"></div>
+                                                <button 
+                                                    onClick={() => {
+                                                        setStatsBank(bank);
+                                                        fetchBankStats(bank._id);
+                                                    }} 
+                                                    className="p-2 text-slate-400 hover:text-indigo-600 transition-colors" 
+                                                    title="Viewers & Attempts"
+                                                >
+                                                    <Eye size={18} />
+                                                </button>
                                                 <button onClick={() => handleDownload(bank)} className="p-2 text-slate-400 hover:text-teal-600 transition-colors" title="Download"><Download size={18} /></button>
+
                                                 <button onClick={() => setEditingBank(bank)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Edit"><Edit size={18} /></button>
                                                 <button onClick={() => handleDelete(bank._id)} className="p-2 text-slate-400 hover:text-red-600 transition-colors" title="Delete"><Trash2 size={18} /></button>
                                             </div>
@@ -795,7 +772,18 @@ const AdminDashboard = () => {
                         />
                     )
                 }
+                {
+                    statsBank && (
+                        <QuestionBankStatsModal 
+                            bank={statsBank}
+                            data={statsData}
+                            loading={loadingStats}
+                            onClose={() => setStatsBank(null)}
+                        />
+                    )
+                }
             </div >
+
         </AdminLayout >
     );
 };
@@ -1497,4 +1485,97 @@ const StudentDetailsModal = ({ student, onClose }) => {
     );
 };
 
+const QuestionBankStatsModal = ({ bank, data, loading, onClose }) => {
+    const [tab, setTab] = useState('viewers'); // 'viewers' or 'attempts'
+
+    return (
+        <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
+                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-50">
+                    <div>
+                        <h3 className="text-xl font-serif font-bold text-slate-800">{bank.title} - Stats</h3>
+                        <p className="text-xs text-slate-500">Track student engagement</p>
+                    </div>
+                    <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full transition-colors"><X size={20} className="text-slate-500" /></button>
+                </div>
+
+                <div className="flex bg-slate-100 p-1 m-4 rounded-xl items-center">
+                    <button 
+                        onClick={() => setTab('viewers')}
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'viewers' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        Viewers ({data.viewers?.length || 0})
+                    </button>
+                    <button 
+                        onClick={() => setTab('attempts')}
+                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'attempts' ? 'bg-white text-orange-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                        Attempts ({data.attempts?.length || 0})
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4">
+                    {loading ? (
+                        <div className="flex justify-center items-center py-20">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {tab === 'viewers' ? (
+                                <>
+                                    {data.viewers && data.viewers.length > 0 ? data.viewers.map((v, i) => (
+                                        <div key={i} className="flex justify-between items-center p-4 rounded-xl border border-slate-100 bg-white hover:border-indigo-100 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold">
+                                                    {(v.fullName || 'S')[0]}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-slate-900">{v.fullName}</p>
+                                                    <p className="text-xs text-slate-400">{v.email || v.mobile || 'No contact'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-xs font-bold text-slate-400 uppercase">Last Viewed</p>
+                                                <p className="text-xs font-medium text-slate-600">{new Date(v.viewedAt).toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="text-center py-10 text-slate-400 italic">No views recorded yet.</div>
+                                    )}
+                                </>
+                            ) : (
+                                <>
+                                    {data.attempts && data.attempts.length > 0 ? data.attempts.map((a, i) => (
+                                        <div key={i} className="flex justify-between items-center p-4 rounded-xl border border-slate-100 bg-white hover:border-orange-100 transition-colors">
+                                            <div className="flex items-center gap-4">
+                                                <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 font-bold">
+                                                    {(a.fullName || 'S')[0]}
+                                                </div>
+                                                <div>
+                                                    <p className="font-bold text-slate-900">{a.fullName}</p>
+                                                    <p className="text-xs text-slate-400">{a.email || a.mobile || 'No contact'}</p>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="flex items-center gap-2 justify-end mb-1">
+                                                    <span className="text-xs font-bold text-slate-400 uppercase">Score:</span>
+                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-black ${a.score >= 50 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{a.score}%</span>
+                                                </div>
+                                                <p className="text-[10px] font-medium text-slate-500">{new Date(a.date).toLocaleString()}</p>
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="text-center py-10 text-slate-400 italic">No attempts made yet.</div>
+                                    )}
+                                </>
+                            )}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};
+
 export default AdminDashboard;
+

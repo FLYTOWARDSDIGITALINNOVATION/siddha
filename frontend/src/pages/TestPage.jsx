@@ -87,6 +87,21 @@ const TestPage = () => {
             }
         };
         fetchTest();
+
+        // Record view
+        const recordView = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    await axios.post(`${process.env.REACT_APP_API_URL || "https://jclsiddhaacademy.in"}/api/user/tests/${id}/view`, {}, {
+                        headers: { Authorization: `Bearer ${token}` }
+                    });
+                }
+            } catch (err) {
+                console.warn("Failed to record view:", err);
+            }
+        };
+        recordView();
     }, [id, navigate]);
 
     const handleSubmit = useCallback(async () => {

@@ -160,6 +160,15 @@ const ReviewSchema = new mongoose.Schema({
 
 const Review = mongoose.model('Review', ReviewSchema);
 
+const QuestionViewSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    testId: { type: mongoose.Schema.Types.ObjectId, ref: 'QuestionBank', required: true },
+    viewedAt: { type: Date, default: Date.now }
+}, { timestamps: true });
+
+const QuestionView = mongoose.model('QuestionView', QuestionViewSchema);
+
+
 // --- MIDDLEWARE ---
 
 const verifyToken = (req, res, next) => {
@@ -429,8 +438,27 @@ app.put('/api/admin/reject-registration/:id', verifyAdmin, async (req, res) => {
 // 3. Question Bank Management
 app.get('/api/admin/question-banks', verifyEducator, async (req, res) => {
     try {
-        const banks = await QuestionBank.find().sort({ createdAt: -1 });
-        res.json(banks);
+        const banks = await QuestionBank.find().sort({ createdAt: -1 }).lean();
+        
+        // Count actual attempts per bank to ensure "outside" count matches "inside" list
+        const attemptCounts = await Attempt.aggregate([
+            { $group: { _id: "$testId", count: { $sum: 1 } } }
+        ]);
+        
+        const countsMap = {};
+        attemptCounts.forEach(curr => {
+            if (curr._id) {
+                const idStr = curr._id.toString();
+                countsMap[idStr] = (countsMap[idStr] || 0) + curr.count;
+            }
+        });
+        
+        const banksWithActualCounts = banks.map(bank => ({
+            ...bank,
+            attempts: countsMap[bank._id.toString()] || 0
+        }));
+        
+        res.json(banksWithActualCounts);
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
 
@@ -622,6 +650,7 @@ app.put('/api/admin/question-banks/:id', verifyEducator, upload.any(), async (re
 
 app.get('/api/admin/question-banks/:id/download', verifyAdmin, async (req, res) => {
     try {
+        console.log(`[DEBUG] Download request for bank ID: ${req.params.id}`);
         const bank = await QuestionBank.findById(req.params.id);
         if (!bank) return res.status(404).json({ message: 'Not found' });
 
@@ -641,6 +670,7 @@ app.get('/api/admin/question-banks/:id/download', verifyAdmin, async (req, res) 
         }
 
         // If no file, or file missing, generate JSON
+        console.log(`[DEBUG] No physical file found for bank ${bank._id}, sending questions JSON`);
         const jsonData = JSON.stringify(bank.questions || [], null, 2);
         res.setHeader('Content-Type', 'application/json');
         res.setHeader('Content-Disposition', `attachment; filename="${bank.title.replace(/[^a-z0-9]/gi, '_')}.json"`);
@@ -789,10 +819,6 @@ app.get('/api/user/tests/:id', verifyToken, async (req, res) => {
             request = await ReAttemptRequest.findOne({ userId: req.user.id, testId: req.params.id }).sort({ createdAt: -1 });
         }
 
-        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
-
         res.json({
             ...test.toObject(),
             hasAttempted: !!attempt,
@@ -800,6 +826,79 @@ app.get('/api/user/tests/:id', verifyToken, async (req, res) => {
         });
     } catch (err) { res.status(500).json({ message: err.message }); }
 });
+
+// Record a view
+app.post('/api/user/tests/:id/view', verifyToken, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = req.user.id;
+        
+        // Only record if not already viewed recently (e.g., within the last hour) or just always record
+        // Let's just record every unique user-test pair for simplicity in "who viewed", or maybe every view is fine.
+        // The user wants to see "who", so unique is probably better for a list.
+        const existing = await QuestionView.findOne({ userId, testId: id });
+        if (!existing) {
+            const newView = new QuestionView({ userId, testId: id });
+            await newView.save();
+        } else {
+            existing.viewedAt = new Date();
+            await existing.save();
+        }
+        res.json({ message: "View recorded" });
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
+// Get viewers and attemptors for a test
+app.get('/api/admin/question-banks/:id/stats', verifyAdmin, async (req, res) => {
+    try {
+        const id = req.params.id;
+        console.log(`[DEBUG] Fetching stats for ID: ${id}`);
+        
+        // Search by both ObjectId and String just in case
+        let query = { $or: [{ testId: id }] };
+        try {
+            query.$or.push({ testId: new mongoose.Types.ObjectId(id) });
+        } catch (e) {
+            console.log(`[DEBUG] Could not cast ${id} to ObjectId`);
+        }
+
+        // Find all attempts
+        const attempts = await Attempt.find(query)
+            .populate('userId', 'fullName email mobile')
+            .sort({ createdAt: -1 });
+            
+        console.log(`[DEBUG] Found ${attempts.length} attempts for query:`, JSON.stringify(query));
+            
+        // Find all views
+        const views = await QuestionView.find(query)
+            .populate('userId', 'fullName email mobile')
+            .sort({ viewedAt: -1 });
+            
+        console.log(`[DEBUG] Found ${views.length} views`);
+            
+        // Combine them to see who viewed vs who attempted
+        const result = {
+            attempts: attempts.map(a => ({
+                userId: a.userId?._id,
+                fullName: a.userId?.fullName,
+                email: a.userId?.email,
+                mobile: a.userId?.mobile,
+                score: a.score,
+                date: a.createdAt
+            })),
+            viewers: views.map(v => ({
+                userId: v.userId?._id,
+                fullName: v.userId?.fullName,
+                email: v.userId?.email,
+                mobile: v.userId?.mobile,
+                viewedAt: v.viewedAt
+            }))
+        };
+        
+        res.json(result);
+    } catch (err) { res.status(500).json({ message: err.message }); }
+});
+
 
 app.post('/api/user/tests/:id/submit', verifyToken, async (req, res) => {
     try {
