@@ -35,6 +35,7 @@ const AdminDashboard = () => {
     const [statsBank, setStatsBank] = useState(null);
     const [statsData, setStatsData] = useState({ viewers: [], attempts: [] });
     const [loadingStats, setLoadingStats] = useState(false);
+    const [analyzingAttempt, setAnalyzingAttempt] = useState(null);
 
     const navigate = useNavigate();
 
@@ -879,6 +880,14 @@ return (
                     data={statsData}
                     loading={loadingStats}
                     onClose={() => setStatsBank(null)}
+                    setAnalyzingAttempt={setAnalyzingAttempt}
+                />
+            )}
+            {analyzingAttempt && (
+                <AttemptAnalysisModal
+                    attempt={analyzingAttempt}
+                    questions={statsData.questions}
+                    onClose={() => setAnalyzingAttempt(null)}
                 />
             )}
         </div >
@@ -1584,9 +1593,161 @@ const StudentDetailsModal = ({ student, onClose }) => {
 };
 
 
-const QuestionBankStatsModal = ({ bank, data, loading, onClose }) => {
-    const [tab, setTab] = useState('viewers');
+const AttemptAnalysisModal = ({ attempt, questions, onClose }) => {
+    if (!attempt || !questions) return null;
 
+    const correctCount = questions.reduce((acc, q, idx) => {
+        const studentAns = attempt.answers[idx];
+        const correctAns = attempt.correctAnswers ? attempt.correctAnswers[idx] : q.answer;
+        return acc + (studentAns === correctAns ? 1 : 0);
+    }, 0);
+    const answeredCount = questions.reduce((acc, q, idx) => {
+        const studentAns = attempt.answers[idx];
+        return acc + (studentAns !== null && studentAns !== undefined && studentAns !== '' ? 1 : 0);
+    }, 0);
+    const wrongCount = answeredCount - correctCount;
+
+    return (
+        <div className="fixed inset-0 bg-black/60 z-[110] flex items-center justify-center p-4 backdrop-blur-md">
+            <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
+                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-slate-50 to-white">
+                    <div>
+                        <h3 className="text-2xl font-serif font-bold text-slate-800">Performance Analysis</h3>
+                        <p className="text-sm text-slate-500 font-medium">Detailed breakdown for {attempt.fullName}</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors group">
+                        <X size={24} className="text-slate-400 group-hover:text-slate-600" />
+                    </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-6 space-y-8">
+                    {/* Summary Stats */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="bg-teal-50 p-4 rounded-2xl border border-teal-100 shadow-sm">
+                            <p className="text-[10px] font-bold text-teal-600 uppercase tracking-widest mb-1">Score</p>
+                            <h4 className="text-2xl font-bold text-teal-900">{attempt.score}%</h4>
+                        </div>
+                        <div className="bg-green-50 p-4 rounded-2xl border border-green-100 shadow-sm">
+                            <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest mb-1">Correct</p>
+                            <h4 className="text-2xl font-bold text-green-900">{correctCount}</h4>
+                        </div>
+                        <div className="bg-red-50 p-4 rounded-2xl border border-red-100 shadow-sm">
+                            <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mb-1">Wrong</p>
+                            <h4 className="text-2xl font-bold text-red-900">{wrongCount}</h4>
+                        </div>
+                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
+                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Unattempted</p>
+                            <h4 className="text-2xl font-bold text-slate-900">{questions.length - answeredCount}</h4>
+                        </div>
+                    </div>
+
+                    {/* Question List */}
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Question Breakdown</h4>
+                            <div className="flex gap-4 text-[10px] font-bold uppercase tracking-tighter">
+                                <span className="flex items-center gap-1 text-green-600"><div className="w-2 h-2 rounded-full bg-green-500"></div> Correct</span>
+                                <span className="flex items-center gap-1 text-red-600"><div className="w-2 h-2 rounded-full bg-red-500"></div> Incorrect</span>
+                                <span className="flex items-center gap-1 text-slate-400"><div className="w-2 h-2 rounded-full bg-slate-300"></div> Unanswered</span>
+                            </div>
+                        </div>
+                        
+                        {questions.map((q, idx) => {
+                            const studentAnswer = attempt.answers[idx];
+                            const correctAnswer = attempt.correctAnswers ? attempt.correctAnswers[idx] : q.answer;
+                            const isCorrect = studentAnswer === correctAnswer;
+                            const isUnanswered = studentAnswer === null || studentAnswer === undefined || studentAnswer === '';
+
+                            return (
+                                <div key={idx} className={`p-6 rounded-2xl border-2 transition-all ${isCorrect ? 'border-green-100 bg-green-50/20' : isUnanswered ? 'border-slate-100 bg-white' : 'border-red-100 bg-red-50/20'}`}>
+                                    <div className="flex justify-between items-start gap-4 mb-4">
+                                        <div className="flex-1">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${isCorrect ? 'bg-green-500 text-white' : isUnanswered ? 'bg-slate-200 text-slate-600' : 'bg-red-500 text-white'}`}>
+                                                    {idx + 1}
+                                                </span>
+                                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question Analysis</p>
+                                            </div>
+                                            <p className="font-bold text-slate-900 text-xl leading-relaxed">{q.question}</p>
+                                        </div>
+                                        {isCorrect ? (
+                                            <div className="bg-green-100 text-green-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-1.5 shadow-sm shrink-0 border border-green-200">
+                                                <Check size={14} strokeWidth={3} /> Correct
+                                            </div>
+                                        ) : isUnanswered ? (
+                                            <div className="bg-slate-100 text-slate-500 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase shrink-0 border border-slate-200 shadow-sm">
+                                                Not Attempted
+                                            </div>
+                                        ) : (
+                                            <div className="bg-red-100 text-red-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-1.5 shadow-sm shrink-0 border border-red-200">
+                                                <X size={14} strokeWidth={3} /> Incorrect
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        {q.options.map((opt, oIdx) => {
+                                            const isSelected = studentAnswer === oIdx;
+                                            const isRight = correctAnswer === oIdx;
+                                            
+                                            let borderClass = 'border-slate-100 hover:border-slate-200';
+                                            let bgClass = 'bg-slate-50/50';
+                                            let textClass = 'text-slate-600';
+                                            let Icon = null;
+
+                                            if (isSelected && isRight) {
+                                                borderClass = 'border-green-500 shadow-md shadow-green-500/10';
+                                                bgClass = 'bg-green-500 text-white';
+                                                textClass = 'font-bold';
+                                                Icon = <Check size={18} />;
+                                            } else if (isSelected && !isRight) {
+                                                borderClass = 'border-red-500 shadow-md shadow-red-500/10';
+                                                bgClass = 'bg-red-500 text-white';
+                                                textClass = 'font-bold';
+                                                Icon = <X size={18} />;
+                                            } else if (isRight) {
+                                                borderClass = 'border-green-500 border-dashed';
+                                                bgClass = 'bg-white';
+                                                textClass = 'text-green-600 font-bold';
+                                            }
+
+                                            return (
+                                                <div key={oIdx} className={`p-4 rounded-xl border-2 transition-all duration-200 ${borderClass} ${bgClass} ${textClass} text-sm flex items-center justify-between`}>
+                                                    <div className="flex items-center gap-3">
+                                                        <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-black ${isSelected ? 'bg-white/20' : 'bg-slate-200 text-slate-500'}`}>
+                                                            {String.fromCharCode(65 + oIdx)}
+                                                        </span>
+                                                        <span>{opt}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-2">
+                                                        {Icon}
+                                                        {!isSelected && isRight && <span className="text-[10px] font-black uppercase bg-green-100 text-green-600 px-2 py-0.5 rounded">Correct Answer</span>}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+
+                <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-center">
+                    <button 
+                        onClick={onClose}
+                        className="px-12 py-4 bg-[#0F172A] hover:bg-black text-white font-bold rounded-2xl shadow-2xl shadow-slate-900/20 transition-all hover:-translate-y-1 active:translate-y-0"
+                    >
+                        Return to Stats
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+
+const QuestionBankStatsModal = ({ bank, data, loading, onClose, setAnalyzingAttempt }) => {
     // Group attempts by user to show unique students in the attempts list
     const uniqueAttempts = Object.values((data.attempts || []).reduce((acc, current) => {
         const uid = current.userId || current.fullName;
@@ -1601,25 +1762,10 @@ const QuestionBankStatsModal = ({ bank, data, loading, onClose }) => {
             <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-50">
                     <div>
-                        <h3 className="text-xl font-serif font-bold text-slate-800">{bank.title} - Stats</h3>
-                        <p className="text-xs text-slate-500">Track student engagement</p>
+                        <h3 className="text-xl font-serif font-bold text-slate-800">{bank.title} - Attempts</h3>
+                        <p className="text-xs text-slate-500">Track student engagement and performance</p>
                     </div>
                     <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full transition-colors"><X size={20} className="text-slate-500" /></button>
-                </div>
-
-                <div className="flex bg-slate-100 p-1 m-4 rounded-xl items-center">
-                    <button
-                        onClick={() => setTab('viewers')}
-                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'viewers' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        Viewers ({data.viewers?.length || 0})
-                    </button>
-                    <button
-                        onClick={() => setTab('attempts')}
-                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${tab === 'attempts' ? 'bg-white text-orange-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-                    >
-                        Attempts ({uniqueAttempts.length})
-                    </button>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4">
@@ -1629,53 +1775,34 @@ const QuestionBankStatsModal = ({ bank, data, loading, onClose }) => {
                         </div>
                     ) : (
                         <div className="space-y-3">
-                            {tab === 'viewers' ? (
-                                <>
-                                    {data.viewers && data.viewers.length > 0 ? data.viewers.map((v, i) => (
-                                        <div key={i} className="flex justify-between items-center p-4 rounded-xl border border-slate-100 bg-white hover:border-indigo-100 transition-colors">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold">
-                                                    {(v.fullName || 'S')[0]}
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-slate-900">{v.fullName}</p>
-                                                    <p className="text-xs text-slate-400">{v.email || v.mobile || 'No contact'}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-xs font-bold text-slate-400 uppercase">Last Viewed</p>
-                                                <p className="text-xs font-medium text-slate-600">{new Date(v.viewedAt).toLocaleString()}</p>
-                                            </div>
+                            <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 mb-2">Student Attempts ({uniqueAttempts.length})</h4>
+                            {uniqueAttempts.length > 0 ? uniqueAttempts.map((a, i) => (
+                                <div key={i} className="flex justify-between items-center p-4 rounded-xl border border-slate-100 bg-white hover:border-orange-100 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 font-bold">
+                                            {(a.fullName || 'S')[0]}
                                         </div>
-                                    )) : (
-                                        <div className="text-center py-10 text-slate-400 italic">No views recorded yet.</div>
-                                    )}
-                                </>
-                            ) : (
-                                <>
-                                    {uniqueAttempts.length > 0 ? uniqueAttempts.map((a, i) => (
-                                        <div key={i} className="flex justify-between items-center p-4 rounded-xl border border-slate-100 bg-white hover:border-orange-100 transition-colors">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 font-bold">
-                                                    {(a.fullName || 'S')[0]}
-                                                </div>
-                                                <div>
-                                                    <p className="font-bold text-slate-900">{a.fullName}</p>
-                                                    <p className="text-xs text-slate-400">{a.email || a.mobile || 'No contact'}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="flex items-center gap-2 justify-end mb-1">
-                                                    <span className="text-xs font-bold text-slate-400 uppercase">Latest Score:</span>
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-black ${a.score >= 50 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{a.score}%</span>
-                                                </div>
-                                                <p className="text-[10px] font-medium text-slate-500">{new Date(a.date).toLocaleString()}</p>
-                                            </div>
+                                        <div>
+                                            <p className="font-bold text-slate-900">{a.fullName}</p>
+                                            <p className="text-xs text-slate-400">{a.email || a.mobile || 'No contact'}</p>
                                         </div>
-                                    )) : (
-                                        <div className="text-center py-10 text-slate-400 italic">No attempts made yet.</div>
-                                    )}
-                                </>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="flex items-center gap-2 justify-end mb-1">
+                                            <span className="text-xs font-bold text-slate-400 uppercase">Latest Score:</span>
+                                            <span className={`px-2 py-0.5 rounded text-[10px] font-black ${a.score >= 50 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{a.score}%</span>
+                                        </div>
+                                        <p className="text-[10px] font-medium text-slate-500 mb-2">{new Date(a.date).toLocaleString()}</p>
+                                        <button 
+                                            onClick={() => setAnalyzingAttempt(a)}
+                                            className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 border border-indigo-200 px-2 py-1 rounded transition-colors"
+                                        >
+                                            View Analysis
+                                        </button>
+                                    </div>
+                                </div>
+                            )) : (
+                                <div className="text-center py-10 text-slate-400 italic">No attempts made yet.</div>
                             )}
                         </div>
                     )}

@@ -853,8 +853,9 @@ app.post('/api/user/tests/:id/view', verifyToken, async (req, res) => {
 app.get('/api/admin/question-banks/:id/stats', verifyAdmin, async (req, res) => {
     try {
         const id = req.params.id;
-        console.log(`[DEBUG] Fetching stats for ID: ${id}`);
-        
+        // Find the bank questions too
+        const bank = await QuestionBank.findById(id).select('questions');
+
         // Search by both ObjectId and String just in case
         let query = { $or: [{ testId: id }] };
         try {
@@ -879,13 +880,16 @@ app.get('/api/admin/question-banks/:id/stats', verifyAdmin, async (req, res) => 
             
         // Combine them to see who viewed vs who attempted
         const result = {
+            questions: bank?.questions || [],
             attempts: attempts.map(a => ({
                 userId: a.userId?._id,
                 fullName: a.userId?.fullName,
                 email: a.userId?.email,
                 mobile: a.userId?.mobile,
                 score: a.score,
-                date: a.createdAt
+                date: a.createdAt,
+                answers: a.answers,
+                correctAnswers: a.correctAnswers
             })),
             viewers: views.map(v => ({
                 userId: v.userId?._id,
