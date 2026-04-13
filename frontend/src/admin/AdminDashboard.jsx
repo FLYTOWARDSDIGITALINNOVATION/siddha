@@ -606,9 +606,12 @@ return (
                             </button>
                         </div>
 
-                        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden overflow-x-auto shadow-sm">
+                        <div className="bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                             {requestType === 'registration' ? (
-                                <table className="w-full text-left min-w-[800px] md:min-w-full">
+                                <>
+                                    {/* DESKTOP VIEW */}
+                                    <div className="hidden md:block overflow-x-auto">
+                                        <table className="w-full text-left md:min-w-full">
                                     <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
                                         <tr>
                                             <th className="px-6 py-4">User Details</th>
@@ -653,9 +656,51 @@ return (
                                             </tr>
                                         )}
                                     </tbody>
-                                </table>
+                                        </table>
+                                    </div>
+
+                                    {/* MOBILE VIEW */}
+                                    <div className="md:hidden divide-y divide-slate-100">
+                                        {pendingRegistrations.map((user, i) => (
+                                            <div key={i} className="p-4 space-y-4">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <p className="font-bold text-slate-900">{user.fullName}</p>
+                                                        <p className="text-xs text-slate-400">{user.email}</p>
+                                                    </div>
+                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-black tracking-wider ${user.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                        {user.category || 'MRB'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between text-[10px] font-bold text-slate-400 uppercase">
+                                                    <span>Role: {user.role}</span>
+                                                    <span>Date: {new Date(user.createdAt).toLocaleDateString()}</span>
+                                                </div>
+                                                <div className="flex flex-col gap-2">
+                                                    <button onClick={() => setSelectedStudent(user)} className="w-full bg-blue-50 text-blue-600 py-2 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors flex items-center justify-center gap-2">
+                                                        <Users size={14} /> View Details
+                                                    </button>
+                                                    <div className="flex gap-2">
+                                                        <button onClick={() => handleApprovalAction(user._id, 'approve')} className="flex-1 bg-green-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                                                            <Check size={14} /> Approve
+                                                        </button>
+                                                        <button onClick={() => handleApprovalAction(user._id, 'reject')} className="flex-1 bg-red-50 text-red-600 py-2 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+                                                            <X size={14} /> Reject
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {pendingRegistrations.length === 0 && (
+                                            <div className="p-10 text-center text-slate-400 font-medium italic">No pending registrations found</div>
+                                        )}
+                                    </div>
+                                </>
                             ) : (
-                                <table className="w-full text-left min-w-[800px] md:min-w-full">
+                                <>
+                                    {/* DESKTOP VIEW */}
+                                    <div className="hidden md:block overflow-x-auto">
+                                        <table className="w-full text-left md:min-w-full">
                                     <thead className="bg-slate-50 text-xs font-bold text-slate-500 uppercase tracking-wider">
                                         <tr>
                                             <th className="px-6 py-4">Student</th>
@@ -691,7 +736,39 @@ return (
                                             </tr>
                                         )}
                                     </tbody>
-                                </table>
+                                        </table>
+                                    </div>
+
+                                    {/* MOBILE VIEW */}
+                                    <div className="md:hidden divide-y divide-slate-100">
+                                        {reattemptRequests.filter(r => r.status === 'pending').map((req, i) => (
+                                            <div key={i} className="p-4 space-y-4">
+                                                <div className="flex justify-between items-start">
+                                                    <div>
+                                                        <p className="font-bold text-slate-900">{req.userId?.fullName}</p>
+                                                        <p className="text-xs text-slate-400">{req.userId?.email}</p>
+                                                    </div>
+                                                    <span className="text-[10px] text-slate-400 font-medium">{new Date(req.createdAt).toLocaleDateString()}</span>
+                                                </div>
+                                                <div>
+                                                    <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">Assessment</p>
+                                                    <p className="text-sm font-medium text-slate-700">{req.testId?.title}</p>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button onClick={() => handleReattemptAction(req._id, 'approved')} className="flex-1 bg-green-600 text-white py-2 rounded-lg text-xs font-bold hover:bg-green-700 transition-colors flex items-center justify-center gap-2">
+                                                        <Check size={14} /> Approve
+                                                    </button>
+                                                    <button onClick={() => handleReattemptAction(req._id, 'rejected')} className="flex-1 bg-red-50 text-red-600 py-2 rounded-lg text-xs font-bold hover:bg-red-100 transition-colors flex items-center justify-center gap-2">
+                                                        <X size={14} /> Reject
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {reattemptRequests.filter(r => r.status === 'pending').length === 0 && (
+                                            <div className="p-10 text-center text-slate-400 font-medium italic">No pending re-attempt requests</div>
+                                        )}
+                                    </div>
+                                </>
                             )}
                         </div>
                     </div>
@@ -1051,8 +1128,8 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
     return (
         <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                    <h3 className="text-xl font-serif font-bold text-slate-800">Create Question Bank</h3>
+                <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h3 className="text-lg md:text-xl font-serif font-bold text-slate-800">Create Question Bank</h3>
                     <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-500" /></button>
                 </div>
 
@@ -1201,11 +1278,11 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
                     </form>
                 </div>
 
-                <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-4">
+                <div className="p-4 md:p-6 border-t border-gray-100 bg-gray-50 flex flex-col md:flex-row gap-3 md:gap-4">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-slate-600 hover:bg-gray-100 transition-colors"
+                        className="w-full md:flex-1 py-3 rounded-xl border border-gray-200 font-bold text-slate-600 hover:bg-gray-100 transition-colors"
                     >
                         Cancel
                     </button>
@@ -1213,7 +1290,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
                         type="button"
                         onClick={(e) => triggerSubmit(e, 'draft')}
                         disabled={loading}
-                        className="flex-1 py-3 rounded-xl border-2 border-slate-200 font-bold text-slate-700 hover:bg-slate-100 transition-all disabled:opacity-70"
+                        className="w-full md:flex-1 py-3 rounded-xl border-2 border-slate-200 font-bold text-slate-700 hover:bg-slate-100 transition-all disabled:opacity-70"
                     >
                         Save Draft
                     </button>
@@ -1221,7 +1298,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
                         onClick={(e) => triggerSubmit(e, 'published')}
                         type="button"
                         disabled={loading}
-                        className="flex-1 py-3 rounded-xl bg-[#0F172A] hover:bg-black text-white font-bold shadow-lg shadow-slate-900/10 transition-all disabled:opacity-70"
+                        className="w-full md:flex-1 py-3 rounded-xl bg-[#0F172A] hover:bg-black text-white font-bold shadow-lg shadow-slate-900/10 transition-all disabled:opacity-70"
                     >
                         {loading ? 'Creating...' : 'Post Question Bank'}
                     </button>
@@ -1324,8 +1401,8 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
     return (
         <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
             <div className="bg-white rounded-2xl w-full max-w-4xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
-                <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-                    <h3 className="text-xl font-serif font-bold text-slate-800">Edit Question Bank</h3>
+                <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                    <h3 className="text-lg md:text-xl font-serif font-bold text-slate-800">Edit Question Bank</h3>
                     <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors"><X size={20} className="text-gray-500" /></button>
                 </div>
 
@@ -1473,11 +1550,11 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
                     </form>
                 </div>
 
-                <div className="p-6 border-t border-gray-100 bg-gray-50 flex gap-4">
+                <div className="p-4 md:p-6 border-t border-gray-100 bg-gray-50 flex flex-col md:flex-row gap-3 md:gap-4">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="flex-1 py-3 rounded-xl border border-gray-200 font-bold text-slate-600 hover:bg-gray-100 transition-colors"
+                        className="w-full md:flex-1 py-3 rounded-xl border border-gray-200 font-bold text-slate-600 hover:bg-gray-100 transition-colors"
                     >
                         Cancel
                     </button>
@@ -1485,7 +1562,7 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
                         form="edit-form"
                         type="submit"
                         disabled={loading}
-                        className="flex-1 py-3 rounded-xl bg-[#C2410C] hover:bg-[#9a3412] text-white font-bold shadow-lg shadow-orange-900/20 transition-all disabled:opacity-70"
+                        className="w-full md:flex-1 py-3 rounded-xl bg-[#C2410C] hover:bg-[#9a3412] text-white font-bold shadow-lg shadow-orange-900/20 transition-all disabled:opacity-70"
                     >
                         {loading ? 'Saving Changes...' : 'Save Changes'}
                     </button>
@@ -1508,17 +1585,17 @@ const StudentDetailsModal = ({ student, onClose }) => {
                 </button>
 
                 <div className="text-center mb-6">
-                    <div className="w-20 h-20 bg-slate-100 rounded-full mx-auto mb-4 flex items-center justify-center text-4xl">
+                    <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-100 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl md:text-4xl">
                         🎓
                     </div>
-                    <h2 className="text-2xl font-serif font-bold text-slate-800">{student.fullName}</h2>
-                    <p className="text-slate-500 font-medium">{student.role || 'Student'}</p>
+                    <h2 className="text-xl md:text-2xl font-serif font-bold text-slate-800 break-words">{student.fullName}</h2>
+                    <p className="text-sm text-slate-500 font-medium">{student.role || 'Student'}</p>
                 </div>
 
                 <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
-                    <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                        <span className="text-sm font-bold text-slate-500">Email</span>
-                        <span className="text-sm font-medium text-slate-900">{student.email}</span>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50 p-3 rounded-lg gap-1 sm:gap-4">
+                        <span className="text-[10px] md:text-sm font-bold text-slate-500 uppercase flex-shrink-0">Email</span>
+                        <span className="text-sm font-medium text-slate-900 break-all">{student.email}</span>
                     </div>
                     {student.gender && (
                         <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
@@ -1581,7 +1658,7 @@ const StudentDetailsModal = ({ student, onClose }) => {
                         <span className="text-sm font-medium text-blue-600 font-bold">{student.averageScore || 0}%</span>
                     </div>
                     <div className="flex justify-between items-center bg-slate-50 p-3 rounded-lg">
-                        <span className="text-sm font-bold text-slate-500">Joined On</span>
+                        <span className="text-[10px] md:text-sm font-bold text-slate-500 uppercase tracking-widest">Joined On</span>
                         <span className="text-sm font-medium text-slate-900">
                             {student.createdAt ? new Date(student.createdAt).toLocaleDateString() : 'N/A'}
                         </span>
@@ -1612,8 +1689,8 @@ const AttemptAnalysisModal = ({ attempt, questions, onClose }) => {
             <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
                 <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-slate-50 to-white">
                     <div>
-                        <h3 className="text-2xl font-serif font-bold text-slate-800">Performance Analysis</h3>
-                        <p className="text-sm text-slate-500 font-medium">Detailed breakdown for {attempt.fullName}</p>
+                        <h3 className="text-xl md:text-2xl font-serif font-bold text-slate-800">Performance Analysis</h3>
+                        <p className="text-[10px] md:text-sm text-slate-500 font-medium whitespace-normal">Detailed breakdown for {attempt.fullName}</p>
                     </div>
                     <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors group">
                         <X size={24} className="text-slate-400 group-hover:text-slate-600" />
@@ -1623,32 +1700,32 @@ const AttemptAnalysisModal = ({ attempt, questions, onClose }) => {
                 <div className="flex-1 overflow-y-auto p-6 space-y-8">
                     {/* Summary Stats */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div className="bg-teal-50 p-4 rounded-2xl border border-teal-100 shadow-sm">
+                        <div className="bg-teal-50 p-3 md:p-4 rounded-2xl border border-teal-100 shadow-sm flex flex-col justify-center">
                             <p className="text-[10px] font-bold text-teal-600 uppercase tracking-widest mb-1">Score</p>
-                            <h4 className="text-2xl font-bold text-teal-900">{attempt.score}%</h4>
+                            <h4 className="text-xl md:text-2xl font-bold text-teal-900">{attempt.score}%</h4>
                         </div>
-                        <div className="bg-green-50 p-4 rounded-2xl border border-green-100 shadow-sm">
+                        <div className="bg-green-50 p-3 md:p-4 rounded-2xl border border-green-100 shadow-sm flex flex-col justify-center">
                             <p className="text-[10px] font-bold text-green-600 uppercase tracking-widest mb-1">Correct</p>
-                            <h4 className="text-2xl font-bold text-green-900">{correctCount}</h4>
+                            <h4 className="text-xl md:text-2xl font-bold text-green-900">{correctCount}</h4>
                         </div>
-                        <div className="bg-red-50 p-4 rounded-2xl border border-red-100 shadow-sm">
+                        <div className="bg-red-50 p-3 md:p-4 rounded-2xl border border-red-100 shadow-sm flex flex-col justify-center">
                             <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mb-1">Wrong</p>
-                            <h4 className="text-2xl font-bold text-red-900">{wrongCount}</h4>
+                            <h4 className="text-xl md:text-2xl font-bold text-red-900">{wrongCount}</h4>
                         </div>
-                        <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 shadow-sm">
-                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Unattempted</p>
-                            <h4 className="text-2xl font-bold text-slate-900">{questions.length - answeredCount}</h4>
+                        <div className="bg-slate-50 p-3 md:p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-center">
+                            <p className="text-[10px] font-bold text-slate-600 uppercase tracking-widest mb-1">Skip</p>
+                            <h4 className="text-xl md:text-2xl font-bold text-slate-900">{questions.length - answeredCount}</h4>
                         </div>
                     </div>
 
                     {/* Question List */}
                     <div className="space-y-6">
-                        <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-100 pb-2 gap-2">
                             <h4 className="text-sm font-bold text-slate-800 uppercase tracking-widest">Question Breakdown</h4>
-                            <div className="flex gap-4 text-[10px] font-bold uppercase tracking-tighter">
+                            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[10px] font-bold uppercase tracking-tighter">
                                 <span className="flex items-center gap-1 text-green-600"><div className="w-2 h-2 rounded-full bg-green-500"></div> Correct</span>
                                 <span className="flex items-center gap-1 text-red-600"><div className="w-2 h-2 rounded-full bg-red-500"></div> Incorrect</span>
-                                <span className="flex items-center gap-1 text-slate-400"><div className="w-2 h-2 rounded-full bg-slate-300"></div> Unanswered</span>
+                                <span className="flex items-center gap-1 text-slate-400"><div className="w-2 h-2 rounded-full bg-slate-300"></div> Skip</span>
                             </div>
                         </div>
                         
@@ -1659,8 +1736,8 @@ const AttemptAnalysisModal = ({ attempt, questions, onClose }) => {
                             const isUnanswered = studentAnswer === null || studentAnswer === undefined || studentAnswer === '';
 
                             return (
-                                <div key={idx} className={`p-6 rounded-2xl border-2 transition-all ${isCorrect ? 'border-green-100 bg-green-50/20' : isUnanswered ? 'border-slate-100 bg-white' : 'border-red-100 bg-red-50/20'}`}>
-                                    <div className="flex justify-between items-start gap-4 mb-4">
+                                <div key={idx} className={`p-4 md:p-6 rounded-2xl border-2 transition-all ${isCorrect ? 'border-green-100 bg-green-50/20' : isUnanswered ? 'border-slate-100 bg-white' : 'border-red-100 bg-red-50/20'}`}>
+                                    <div className="flex flex-col-reverse sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 mb-2">
                                                 <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold ${isCorrect ? 'bg-green-500 text-white' : isUnanswered ? 'bg-slate-200 text-slate-600' : 'bg-red-500 text-white'}`}>
@@ -1668,18 +1745,18 @@ const AttemptAnalysisModal = ({ attempt, questions, onClose }) => {
                                                 </span>
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question Analysis</p>
                                             </div>
-                                            <p className="font-bold text-slate-900 text-xl leading-relaxed">{q.question}</p>
+                                            <p className="font-bold text-slate-900 text-base md:text-xl leading-relaxed">{q.question}</p>
                                         </div>
                                         {isCorrect ? (
-                                            <div className="bg-green-100 text-green-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-1.5 shadow-sm shrink-0 border border-green-200">
+                                            <div className="bg-green-100 text-green-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-1.5 shadow-sm shrink-0 border border-green-200 w-fit">
                                                 <Check size={14} strokeWidth={3} /> Correct
                                             </div>
                                         ) : isUnanswered ? (
-                                            <div className="bg-slate-100 text-slate-500 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase shrink-0 border border-slate-200 shadow-sm">
+                                            <div className="bg-slate-100 text-slate-500 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase shrink-0 border border-slate-200 shadow-sm w-fit">
                                                 Not Attempted
                                             </div>
                                         ) : (
-                                            <div className="bg-red-100 text-red-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-1.5 shadow-sm shrink-0 border border-red-200">
+                                            <div className="bg-red-100 text-red-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-1.5 shadow-sm shrink-0 border border-red-200 w-fit">
                                                 <X size={14} strokeWidth={3} /> Incorrect
                                             </div>
                                         )}
@@ -1733,10 +1810,10 @@ const AttemptAnalysisModal = ({ attempt, questions, onClose }) => {
                     </div>
                 </div>
 
-                <div className="p-8 border-t border-slate-100 bg-slate-50/50 flex justify-center">
+                <div className="p-4 md:p-8 border-t border-slate-100 bg-slate-50/50 flex justify-center">
                     <button 
                         onClick={onClose}
-                        className="px-12 py-4 bg-[#0F172A] hover:bg-black text-white font-bold rounded-2xl shadow-2xl shadow-slate-900/20 transition-all hover:-translate-y-1 active:translate-y-0"
+                        className="w-full md:w-auto px-8 md:px-12 py-3 md:py-4 bg-[#0F172A] hover:bg-black text-white font-bold rounded-xl md:rounded-2xl shadow-xl shadow-slate-900/10 transition-all hover:-translate-y-1 active:translate-y-0"
                     >
                         Return to Stats
                     </button>
@@ -1762,8 +1839,8 @@ const QuestionBankStatsModal = ({ bank, data, loading, onClose, setAnalyzingAtte
             <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
                 <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-slate-50">
                     <div>
-                        <h3 className="text-xl font-serif font-bold text-slate-800">{bank.title} - Attempts</h3>
-                        <p className="text-xs text-slate-500">Track student engagement and performance</p>
+                        <h3 className="text-lg md:text-xl font-serif font-bold text-slate-800">{bank.title} - Attempts</h3>
+                        <p className="text-[10px] md:text-xs text-slate-500">Track student engagement and performance</p>
                     </div>
                     <button onClick={onClose} className="p-1 hover:bg-gray-200 rounded-full transition-colors"><X size={20} className="text-slate-500" /></button>
                 </div>
@@ -1777,25 +1854,25 @@ const QuestionBankStatsModal = ({ bank, data, loading, onClose, setAnalyzingAtte
                         <div className="space-y-3">
                             <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1 mb-2">Student Attempts ({uniqueAttempts.length})</h4>
                             {uniqueAttempts.length > 0 ? uniqueAttempts.map((a, i) => (
-                                <div key={i} className="flex justify-between items-center p-4 rounded-xl border border-slate-100 bg-white hover:border-orange-100 transition-colors">
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 font-bold">
+                                <div key={i} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 rounded-xl border border-slate-100 bg-white hover:border-orange-100 transition-colors gap-4">
+                                    <div className="flex items-center gap-3 md:gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-orange-600 font-bold shrink-0">
                                             {(a.fullName || 'S')[0]}
                                         </div>
                                         <div>
-                                            <p className="font-bold text-slate-900">{a.fullName}</p>
-                                            <p className="text-xs text-slate-400">{a.email || a.mobile || 'No contact'}</p>
+                                            <p className="font-bold text-slate-900 text-sm md:text-base">{a.fullName}</p>
+                                            <p className="text-[10px] md:text-xs text-slate-400 break-all">{a.email || a.mobile || 'No contact'}</p>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="flex items-center gap-2 justify-end mb-1">
-                                            <span className="text-xs font-bold text-slate-400 uppercase">Latest Score:</span>
+                                    <div className="text-left sm:text-right w-full sm:w-auto border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-50">
+                                        <div className="flex items-center gap-2 justify-start sm:justify-end mb-1">
+                                            <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase">Latest Score:</span>
                                             <span className={`px-2 py-0.5 rounded text-[10px] font-black ${a.score >= 50 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{a.score}%</span>
                                         </div>
                                         <p className="text-[10px] font-medium text-slate-500 mb-2">{new Date(a.date).toLocaleString()}</p>
                                         <button 
                                             onClick={() => setAnalyzingAttempt(a)}
-                                            className="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 border border-indigo-200 px-2 py-1 rounded transition-colors"
+                                            className="w-full sm:w-auto text-[10px] font-bold text-indigo-600 hover:text-indigo-800 border border-indigo-200 px-3 py-1.5 rounded transition-colors"
                                         >
                                             View Analysis
                                         </button>
