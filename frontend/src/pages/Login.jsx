@@ -24,7 +24,7 @@ const Login = () => {
         e.preventDefault();
         
         const lowerEmail = formData.email.toLowerCase();
-        if (!lowerEmail.endsWith('@gmail.com') && lowerEmail !== 'admin@siddhaveda.com') {
+        if (!lowerEmail.endsWith('@gmail.com') && lowerEmail !== 'admin@siddhaveda.com' && lowerEmail !== 'admin@siddhavedha.com') {
             alert('Please use a valid @gmail.com address or the authorized admin login.');
             return;
         }

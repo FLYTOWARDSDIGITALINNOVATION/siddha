@@ -422,9 +422,11 @@ return (
                                                 }`}>
                                                 {bank.difficulty}
                                             </span>
-                                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider ${bank.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : bank.category === 'MRB' ? 'bg-orange-100 text-orange-700' : 'bg-teal-100 text-teal-700'}`}>
-                                                {bank.category || 'Both'}
-                                            </span>
+                                            {(Array.isArray(bank.category) ? bank.category : (bank.category ? [bank.category] : ['Both'])).map((cat, idx) => (
+                                                <span key={idx} className={`text-[10px] px-2 py-0.5 rounded-full font-black tracking-wider ${cat === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : cat === 'MRB' ? 'bg-orange-100 text-orange-700' : cat === 'Crash Course' ? 'bg-rose-100 text-rose-700' : 'bg-teal-100 text-teal-700'}`}>
+                                                    {cat}
+                                                </span>
+                                            ))}
                                         </div>
                                         <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-xs text-slate-500 font-medium">
                                             <span>{bank.questionsCount || bank.questions} questions</span>
@@ -632,7 +634,7 @@ return (
                                                     {user.role}
                                                 </td>
                                                 <td className="px-6 py-4 text-center">
-                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-black tracking-wider ${user.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-black tracking-wider ${user.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : user.category === 'Crash Course' ? 'bg-rose-100 text-rose-700' : 'bg-orange-100 text-orange-700'}`}>
                                                         {user.category || 'MRB'}
                                                     </span>
                                                 </td>
@@ -668,7 +670,7 @@ return (
                                                         <p className="font-bold text-slate-900">{user.fullName}</p>
                                                         <p className="text-xs text-slate-400">{user.email}</p>
                                                     </div>
-                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-black tracking-wider ${user.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : 'bg-orange-100 text-orange-700'}`}>
+                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-black tracking-wider ${user.category === 'AIAPGET' ? 'bg-indigo-100 text-indigo-700' : user.category === 'Crash Course' ? 'bg-rose-100 text-rose-700' : 'bg-orange-100 text-orange-700'}`}>
                                                         {user.category || 'MRB'}
                                                     </span>
                                                 </div>
@@ -985,7 +987,7 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
     const [formData, setFormData] = useState({
         title: '',
         difficulty: 'Easy',
-        category: 'Both',
+        category: ['Both'],
         negativeMarking: false,
         duration: 60,
         status: 'published'
@@ -1160,16 +1162,36 @@ const UploadModal = ({ onClose, onSuccess, onAuthError }) => {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Category</label>
-                                <select
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
-                                    value={formData.category}
-                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                >
-                                    <option>Both</option>
-                                    <option>MRB</option>
-                                    <option>AIAPGET</option>
-                                </select>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Category</label>
+                                <div className="flex flex-wrap gap-x-4 gap-y-2 mt-1">
+                                    {['Both', 'MRB', 'AIAPGET', 'Crash Course'].map(cat => (
+                                        <label key={cat} className="flex items-center gap-1.5 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                name="upload-category"
+                                                value={cat}
+                                                checked={Array.isArray(formData.category) ? formData.category.includes(cat) : formData.category === cat}
+                                                onChange={e => {
+                                                    const checked = e.target.checked;
+                                                    let newCats = Array.isArray(formData.category) ? [...formData.category] : [formData.category];
+                                                    if (checked) {
+                                                        if (cat === 'Both') newCats = ['Both'];
+                                                        else {
+                                                            newCats = newCats.filter(c => c !== 'Both');
+                                                            if (!newCats.includes(cat)) newCats.push(cat);
+                                                        }
+                                                    } else {
+                                                        newCats = newCats.filter(c => c !== cat);
+                                                        if (newCats.length === 0) newCats = ['Both'];
+                                                    }
+                                                    setFormData({ ...formData, category: newCats });
+                                                }}
+                                                className="w-4 h-4 accent-[#C2410C] rounded"
+                                            />
+                                            <span className="text-sm font-medium text-slate-700">{cat}</span>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Duration (Min)</label>
@@ -1312,7 +1334,7 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
     const [formData, setFormData] = useState({
         title: bank.title,
         difficulty: bank.difficulty || 'Easy',
-        category: bank.category || 'Both',
+        category: Array.isArray(bank.category) ? bank.category : (bank.category ? [bank.category] : ['Both']),
         duration: bank.duration || 60,
         status: bank.status || 'published',
         negativeMarking: bank.negativeMarking || false
@@ -1432,16 +1454,36 @@ const EditModal = ({ bank, onClose, onSuccess }) => {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Category</label>
-                                <select
-                                    className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#C2410C]/20 text-sm bg-white"
-                                    value={formData.category}
-                                    onChange={e => setFormData({ ...formData, category: e.target.value })}
-                                >
-                                    <option>Both</option>
-                                    <option>MRB</option>
-                                    <option>AIAPGET</option>
-                                </select>
+                                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Category</label>
+                                <div className="flex flex-wrap gap-x-4 gap-y-2 mt-1">
+                                    {['Both', 'MRB', 'AIAPGET', 'Crash Course'].map(cat => (
+                                        <label key={cat} className="flex items-center gap-1.5 cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                name="edit-category"
+                                                value={cat}
+                                                checked={Array.isArray(formData.category) ? formData.category.includes(cat) : formData.category === cat}
+                                                onChange={e => {
+                                                    const checked = e.target.checked;
+                                                    let newCats = Array.isArray(formData.category) ? [...formData.category] : [formData.category];
+                                                    if (checked) {
+                                                        if (cat === 'Both') newCats = ['Both'];
+                                                        else {
+                                                            newCats = newCats.filter(c => c !== 'Both');
+                                                            if (!newCats.includes(cat)) newCats.push(cat);
+                                                        }
+                                                    } else {
+                                                        newCats = newCats.filter(c => c !== cat);
+                                                        if (newCats.length === 0) newCats = ['Both'];
+                                                    }
+                                                    setFormData({ ...formData, category: newCats });
+                                                }}
+                                                className="w-4 h-4 accent-[#C2410C] rounded"
+                                            />
+                                            <span className="text-sm font-medium text-slate-700">{cat}</span>
+                                        </label>
+                                    ))}
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Duration (Min)</label>

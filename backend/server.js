@@ -107,7 +107,7 @@ const AdminUser = mongoose.model('AdminUser', AdminUserSchema);
 const QuestionBankSchema = new mongoose.Schema({
     title: String,
     difficulty: String,
-    category: { type: String, enum: ['MRB', 'AIAPGET', 'Both'], default: 'Both' },
+    category: { type: [String], default: ['Both'] },
     filename: String,
     filenames: [String],
     questions: [{
@@ -501,6 +501,7 @@ app.post('/api/admin/question-banks', verifyEducator, upload.any(), async (req, 
             filenames: filenames,
             questions: questions,
             questionsCount: questionsCount || req.body.questionsCount || 0,
+            category: Array.isArray(req.body.category) ? req.body.category : (typeof req.body.category === 'string' ? req.body.category.split(',') : ['Both']),
             negativeMarking: req.body.negativeMarking === 'true' || req.body.negativeMarking === true,
             duration: req.body.duration ? parseInt(req.body.duration) : 60,
             status: req.body.status || 'published',
@@ -578,7 +579,7 @@ app.put('/api/admin/question-banks/:id', verifyEducator, upload.any(), async (re
         // Update metadata
         if (title) bank.title = title;
         if (difficulty) bank.difficulty = difficulty;
-        if (category) bank.category = category;
+        if (category) bank.category = Array.isArray(category) ? category : (typeof category === 'string' ? category.split(',') : category);
         if (req.body.negativeMarking !== undefined) {
             bank.negativeMarking = req.body.negativeMarking === 'true' || req.body.negativeMarking === true;
         }
@@ -697,7 +698,10 @@ app.get('/api/user/tests', verifyToken, async (req, res) => {
 
         const tests = await QuestionBank.find({
             status: 'published',
-            category: { $in: [user.category, 'Both'] }
+            $or: [
+                { category: 'Both' },
+                { category: user.category }
+            ]
         }).select('-questions.answer');
 
         console.log(`[DEBUG] Found ${tests.length} published tests for user ${req.user.id}`);

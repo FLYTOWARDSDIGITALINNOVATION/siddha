@@ -89,7 +89,7 @@ const StudentRegister = () => {
                             <Input label="UG College Academic Year" name="ugYear" placeholder="2018-2023" onChange={handleChange} />
                             <Input label="PG College Name" name="pgCollege" placeholder="Government Siddha Medical College" onChange={handleChange} />
                             <Input label="PG Academic Year" name="pgYear" placeholder="2024-2027" onChange={handleChange} />
-                            <Select label="Registered Category" name="category" options={["MRB", "AIAPGET"]} value={formData.category} onChange={handleChange} />
+                            <Select label="Registered Category" name="category" options={["MRB", "AIAPGET", "Crash Course"]} value={formData.category} onChange={handleChange} />
                             <Input label="Register Number" name="regNo" placeholder="REG-2024-001" onChange={handleChange} required />
                         </div>
                     </div>

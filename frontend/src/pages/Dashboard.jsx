@@ -102,8 +102,15 @@ const Dashboard = () => {
     { label: "Role", value: (user.role || 'Student').toUpperCase(), sub: user.course || "BSMS", icon: User, color: "text-blue-600", bg: "bg-blue-50", category: "Account" },
   ];
 
-  // Filter by subject - show ALL tests now as requested
-  const filteredExams = exams;
+  // Filter by user's category (show 'Both' and the specific category they registered for)
+  const filteredExams = exams.filter(exam => {
+      const examCats = Array.isArray(exam.category) ? exam.category : [exam.category];
+      return !exam.category || 
+          examCats.includes('Both') || 
+          examCats.includes(user.category) ||
+          user.role?.toLowerCase() === 'admin' ||
+          user.role?.toLowerCase() === 'faculty';
+  });
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-[#FDFCFB]">
