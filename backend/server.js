@@ -66,7 +66,7 @@ const UserSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['student', 'faculty', 'admin'], default: 'student' },
-    category: { type: String, enum: ['MRB', 'AIAPGET', 'Both'], default: 'Both' },
+    category: { type: String, enum: ['MRB', 'AIAPGET', 'Crash Course', 'Both'], default: 'Both' },
     // Student & Profile fields
     gender: String,
     dob: String,
