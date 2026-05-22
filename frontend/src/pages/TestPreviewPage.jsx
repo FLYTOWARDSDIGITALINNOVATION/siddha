@@ -117,7 +117,7 @@ const TestPreviewPage = () => {
                                     <span className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-lg font-bold ${isCorrect ? 'bg-green-600 text-white' : isSkipped ? 'bg-amber-500 text-white' : 'bg-red-500 text-white'}`}>
                                         {qIdx + 1}
                                     </span>
-                                    <h4 className="text-xl font-bold text-slate-800 leading-tight pt-1">
+                                    <h4 className="text-xl font-bold text-slate-800 leading-tight pt-1 whitespace-pre-line">
                                         {q.question.startsWith('Question') ? `Select answer for Question ${qIdx + 1}` : q.question}
                                     </h4>
                                 </div>
@@ -136,7 +136,7 @@ const TestPreviewPage = () => {
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 gap-4">
                                     {q.options.map((opt, oIdx) => {
                                         let optionClass = "border-slate-100 bg-white text-slate-500";
                                         let icon = null;
@@ -158,7 +158,7 @@ const TestPreviewPage = () => {
                                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${isThisStudentChoice ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-400'}`}>
                                                         {String.fromCharCode(65 + oIdx)}
                                                     </div>
-                                                    <span className="text-lg">{opt}</span>
+                                                    <span className="text-lg whitespace-pre-line">{opt}</span>
                                                 </div>
                                                 {icon}
                                             </div>

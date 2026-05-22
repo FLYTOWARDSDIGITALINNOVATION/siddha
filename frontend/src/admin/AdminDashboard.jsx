@@ -1787,7 +1787,7 @@ const AttemptAnalysisModal = ({ attempt, questions, onClose }) => {
                                                 </span>
                                                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Question Analysis</p>
                                             </div>
-                                            <p className="font-bold text-slate-900 text-base md:text-xl leading-relaxed">{q.question}</p>
+                                            <p className="font-bold text-slate-900 text-base md:text-xl leading-relaxed whitespace-pre-line">{q.question}</p>
                                         </div>
                                         {isCorrect ? (
                                             <div className="bg-green-100 text-green-700 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase flex items-center gap-1.5 shadow-sm shrink-0 border border-green-200 w-fit">
@@ -1804,7 +1804,7 @@ const AttemptAnalysisModal = ({ attempt, questions, onClose }) => {
                                         )}
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="grid grid-cols-1 gap-4">
                                         {q.options.map((opt, oIdx) => {
                                             const isSelected = studentAnswer === oIdx;
                                             const isRight = correctAnswer === oIdx;
@@ -1836,7 +1836,9 @@ const AttemptAnalysisModal = ({ attempt, questions, onClose }) => {
                                                         <span className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-black ${isSelected ? 'bg-white/20' : 'bg-slate-200 text-slate-500'}`}>
                                                             {String.fromCharCode(65 + oIdx)}
                                                         </span>
-                                                        <span>{opt}</span>
+                                                        <div className="flex-1">
+                                                            <span className="whitespace-pre-line block">{opt}</span>
+                                                        </div>
                                                     </div>
                                                     <div className="flex items-center gap-2">
                                                         {Icon}

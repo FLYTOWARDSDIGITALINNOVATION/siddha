@@ -291,9 +291,9 @@ const TestPage = () => {
                                                 <span className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isCorrect ? 'bg-[#0F172A] text-white' : 'bg-red-500 text-white'}`}>
                                                     {qIdx + 1}
                                                 </span>
-                                                {q.question}
+                                                <span className="whitespace-pre-line">{q.question}</span>
                                             </h4>
-                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-11">
+                                            <div className="grid grid-cols-1 gap-3 pl-11">
                                                 {q.options.map((opt, oIdx) => {
                                                     let optionClass = "border-slate-100 bg-white text-slate-500";
                                                     let icon = null;
@@ -308,7 +308,7 @@ const TestPage = () => {
 
                                                     return (
                                                         <div key={oIdx} className={`px-4 py-3 rounded-xl border flex items-center justify-between ${optionClass}`}>
-                                                            <span>{opt}</span>
+                                                            <span className="whitespace-pre-line">{opt}</span>
                                                             {icon}
                                                         </div>
                                                     );
@@ -395,7 +395,7 @@ const TestPage = () => {
                                 className="space-y-8"
                             >
                                 {/* If manual question, hide generic text or show "Refer to file" */}
-                                <h2 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 leading-tight">
+                                <h2 className="text-2xl md:text-3xl font-serif font-bold text-slate-900 leading-tight whitespace-pre-line">
                                     {question.question.startsWith('Question') ? `Select answer for Question ${currentQuestion + 1}` : question.question}
                                 </h2>
 
@@ -416,7 +416,7 @@ const TestPage = () => {
                                                     }`}>
                                                     {String.fromCharCode(65 + idx)}
                                                 </div>
-                                                <span className="text-lg font-medium text-slate-700">{option}</span>
+                                                <span className="text-lg font-medium text-slate-700 whitespace-pre-line">{option}</span>
                                             </div>
                                             {selectedAnswers[currentQuestion] === idx && (
                                                 <CheckCircle2 size={24} className="text-[#0F172A]" />
