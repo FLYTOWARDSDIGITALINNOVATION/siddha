@@ -36,6 +36,8 @@ const AdminDashboard = () => {
     const [statsData, setStatsData] = useState({ viewers: [], attempts: [] });
     const [loadingStats, setLoadingStats] = useState(false);
     const [analyzingAttempt, setAnalyzingAttempt] = useState(null);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [studentSearchQuery, setStudentSearchQuery] = useState('');
 
     const navigate = useNavigate();
 
@@ -292,6 +294,15 @@ const AdminDashboard = () => {
         }
     };
 
+    const filteredQuestionBanks = questionBanks.filter(bank => 
+        bank.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    const filteredStudents = users.filter(u => 
+        (u.role || 'student').toLowerCase() === 'student' &&
+        (u.fullName?.toLowerCase().includes(studentSearchQuery.toLowerCase()) || 
+         u.email?.toLowerCase().includes(studentSearchQuery.toLowerCase()))
+    );
 
 return (
     <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
@@ -406,14 +417,16 @@ return (
                             <input
                                 type="text"
                                 placeholder={`Search question banks...`}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-10 pr-4 py-2 w-full rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-sm"
                             />
                         </div>
                     </div>
 
                     <div className="space-y-6">
-                        {questionBanks.length > 0 ?
-                            questionBanks.map((bank) => (
+                        {filteredQuestionBanks.length > 0 ?
+                            filteredQuestionBanks.map((bank) => (
                                 <div key={bank._id || bank.id} className="bg-white p-4 md:p-6 rounded-xl border border-slate-100 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 md:gap-0 hover:shadow-sm transition-shadow">
                                     <div className="w-full">
                                         <div className="flex flex-wrap items-center gap-2 md:gap-3 mb-2 md:mb-1">
@@ -488,6 +501,8 @@ return (
                                 <input
                                     type="text"
                                     placeholder="Search students..."
+                                    value={studentSearchQuery}
+                                    onChange={(e) => setStudentSearchQuery(e.target.value)}
                                     className="pl-10 pr-4 py-2 w-full rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-teal-500/20 text-sm"
                                 />
                             </div>
@@ -507,7 +522,7 @@ return (
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-slate-100 text-sm">
-                                    {users.filter(u => (u.role || 'student').toLowerCase() === 'student').map((user, i) => (
+                                    {filteredStudents.map((user, i) => (
                                         <tr key={i} className="hover:bg-slate-50 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div>
@@ -533,7 +548,7 @@ return (
                                             </td>
                                         </tr>
                                     ))}
-                                    {users.filter(u => (u.role || 'student').toLowerCase() === 'student').length === 0 && (
+                                    {filteredStudents.length === 0 && (
                                         <tr>
                                             <td colSpan="6" className="text-center py-8 text-slate-400">
                                                 No students found. (Total Users fetched: {users.length})
@@ -546,8 +561,8 @@ return (
 
                         {/* MOBILE VIEW */}
                         <div className="space-y-4 block md:hidden">
-                            {users.filter(u => (u.role || 'student').toLowerCase() === 'student').length > 0 ? (
-                                users.filter(u => (u.role || 'student').toLowerCase() === 'student').map((user, i) => (
+                            {filteredStudents.length > 0 ? (
+                                filteredStudents.map((user, i) => (
                                     <div key={i} className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm flex flex-col gap-3">
                                         <div className="flex justify-between items-start">
                                             <div>
