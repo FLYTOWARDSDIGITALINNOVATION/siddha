@@ -9,7 +9,6 @@ import {
     BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import AdminLayout from '../components/Layout/AdminLayout';
-import html2pdf from 'html2pdf.js';
 const API_URL = process.env.REACT_APP_API_URL || (window.location.hostname === 'localhost' ? 'http://localhost:5000' : "https://jclsiddhaacademy.in");
 
 const AdminDashboard = () => {
