@@ -246,45 +246,61 @@ const AdminDashboard = () => {
                 return;
             }
 
-            console.log("[DEBUG] Generating PDF from JSON data using html2pdf...");
-            const html2pdfModule = await import('html2pdf.js');
-            const html2pdf = html2pdfModule.default || html2pdfModule;
-
-            const element = document.createElement('div');
-            element.innerHTML = `
-                <div style="padding: 20px; font-family: 'Arial', sans-serif;">
-                    <h2 style="text-align: center; color: #1e3a8a; margin-bottom: 5px;">${bank.title}</h2>
-                    <p style="text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 20px;">
+            // Use the browser's native print-to-PDF functionality which guarantees perfect page breaks
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(`
+                <html>
+                <head>
+                    <title>${bank.title}</title>
+                    <style>
+                        body { font-family: 'Arial', sans-serif; padding: 20px; color: #111827; }
+                        h2 { text-align: center; color: #1e3a8a; margin-bottom: 5px; }
+                        .meta { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 20px; }
+                        hr { margin-bottom: 25px; border: 1px solid #e5e7eb; }
+                        .question-block { 
+                            margin-bottom: 20px; 
+                            page-break-inside: avoid; 
+                            break-inside: avoid;
+                        }
+                        .question-text { font-weight: 600; font-size: 14px; margin-bottom: 10px; white-space: pre-wrap; }
+                        .option-text { margin-left: 20px; font-size: 13px; margin-bottom: 4px; color: #374151; white-space: pre-wrap; }
+                        .answer-text { margin-left: 20px; color: #16a34a; font-size: 13px; font-style: italic; margin-top: 8px; }
+                        @media print {
+                            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                            .question-block { page-break-inside: avoid; break-inside: avoid; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <h2>${bank.title}</h2>
+                    <p class="meta">
                         Difficulty: ${bank.difficulty || 'N/A'} | Total Questions: ${questionData.length}
                     </p>
-                    <hr style="margin-bottom: 25px; border: 1px solid #e5e7eb;"/>
+                    <hr/>
                     ${questionData.map((q, i) => `
-                        <div style="margin-bottom: 20px; page-break-inside: avoid;">
-                            <p style="font-weight: 600; font-size: 14px; margin-bottom: 10px;">${i + 1}. ${q.question}</p>
+                        <div class="question-block">
+                            <p class="question-text">${i + 1}. ${q.question}</p>
                             ${q.options && Array.isArray(q.options) ? q.options.map((opt, j) => `
-                                <p style="margin-left: 20px; font-size: 13px; margin-bottom: 4px; color: #374151;">
-                                    ${String.fromCharCode(97 + j)}) ${opt}
-                                </p>
+                                <p class="option-text">${String.fromCharCode(97 + j)}) ${opt}</p>
                             `).join('') : ''}
                             ${q.answer !== undefined ? `
-                                <p style="margin-left: 20px; color: #16a34a; font-size: 13px; font-style: italic; margin-top: 8px;">
-                                    Answer: ${typeof q.answer === 'number' && q.options ? q.options[q.answer] : q.answer}
-                                </p>
+                                <p class="answer-text">Answer: ${typeof q.answer === 'number' && q.options ? q.options[q.answer] : q.answer}</p>
                             ` : ''}
                         </div>
                     `).join('')}
-                </div>
-            `;
-
-            const opt = {
-                margin: 10,
-                filename: `${bank.title.replace(/\s+/g, '_')}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            };
-
-            html2pdf().from(element).set(opt).save();
+                    <script>
+                        window.onload = function() {
+                            setTimeout(() => {
+                                window.print();
+                                window.close();
+                            }, 500);
+                        };
+                    </script>
+                </body>
+                </html>
+            `);
+            printWindow.document.close();
+            console.log("[DEBUG] Native browser print triggered.");
             console.log("[DEBUG] PDF download triggered.");
 
         } catch (err) {
