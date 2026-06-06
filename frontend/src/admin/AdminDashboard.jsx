@@ -245,14 +245,22 @@ const AdminDashboard = () => {
                 return;
             }
 
-            // Use the browser's native print-to-PDF functionality which guarantees perfect page breaks
+            // Open a preview page where users can natively print or download via html2pdf
             const printWindow = window.open('', '_blank');
             printWindow.document.write(`
                 <html>
                 <head>
                     <title>${bank.title}</title>
+                    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
                     <style>
-                        body { font-family: 'Arial', sans-serif; padding: 20px; color: #111827; }
+                        body { font-family: 'Arial', sans-serif; padding: 20px; color: #111827; background: #f8fafc; }
+                        #content { background: white; padding: 30px; border-radius: 8px; max-width: 800px; margin: 0 auto; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+                        .toolbar { text-align: center; margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); position: sticky; top: 0; z-index: 10; }
+                        .btn { padding: 10px 20px; font-size: 14px; font-weight: bold; cursor: pointer; border: none; border-radius: 6px; margin: 0 5px; transition: all 0.2s; }
+                        .btn-print { background: #2563eb; color: white; }
+                        .btn-print:hover { background: #1d4ed8; }
+                        .btn-download { background: #16a34a; color: white; }
+                        .btn-download:hover { background: #15803d; }
                         h2 { text-align: center; color: #1e3a8a; margin-bottom: 5px; }
                         .meta { text-align: center; color: #6b7280; font-size: 14px; margin-bottom: 20px; }
                         hr { margin-bottom: 25px; border: 1px solid #e5e7eb; }
@@ -260,40 +268,68 @@ const AdminDashboard = () => {
                             margin-bottom: 20px; 
                             page-break-inside: avoid; 
                             break-inside: avoid;
+                            display: inline-block;
+                            width: 100%;
                         }
                         .question-text { font-weight: 600; font-size: 14px; margin-bottom: 10px; white-space: pre-wrap; }
                         .option-text { margin-left: 20px; font-size: 13px; margin-bottom: 4px; color: #374151; white-space: pre-wrap; }
                         .answer-text { margin-left: 20px; color: #16a34a; font-size: 13px; font-style: italic; margin-top: 8px; }
                         @media print {
-                            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-                            .question-block { page-break-inside: avoid; break-inside: avoid; }
+                            body { padding: 0; background: white; }
+                            #content { box-shadow: none; max-width: none; padding: 0; }
+                            .toolbar { display: none !important; }
+                            .question-block { page-break-inside: avoid; break-inside: avoid; display: block; }
                         }
                     </style>
                 </head>
                 <body>
-                    <h2>${bank.title}</h2>
-                    <p class="meta">
-                        Difficulty: ${bank.difficulty || 'N/A'} | Total Questions: ${questionData.length}
-                    </p>
-                    <hr/>
-                    ${questionData.map((q, i) => `
-                        <div class="question-block">
-                            <p class="question-text">${i + 1}. ${q.question}</p>
-                            ${q.options && Array.isArray(q.options) ? q.options.map((opt, j) => `
-                                <p class="option-text">${String.fromCharCode(97 + j)}) ${opt}</p>
-                            `).join('') : ''}
-                            ${q.answer !== undefined ? `
-                                <p class="answer-text">Answer: ${typeof q.answer === 'number' && q.options ? q.options[q.answer] : q.answer}</p>
-                            ` : ''}
-                        </div>
-                    `).join('')}
+                    <div class="toolbar">
+                        <button class="btn btn-print" onclick="window.print()">🖨️ Print Document</button>
+                        <button class="btn btn-download" onclick="downloadPDF()">⬇️ Download PDF</button>
+                        <p style="font-size: 12px; color: #64748b; margin-top: 10px; margin-bottom: 0;">If you are on mobile, use "Download PDF". For best quality on Desktop, use "Print" and select "Save as PDF".</p>
+                    </div>
+                    <div id="content">
+                        <h2>${bank.title}</h2>
+                        <p class="meta">
+                            Difficulty: ${bank.difficulty || 'N/A'} | Total Questions: ${questionData.length}
+                        </p>
+                        <hr/>
+                        ${questionData.map((q, i) => `
+                            <div class="question-block">
+                                <p class="question-text">${i + 1}. ${q.question}</p>
+                                ${q.options && Array.isArray(q.options) ? q.options.map((opt, j) => `
+                                    <p class="option-text">${String.fromCharCode(97 + j)}) ${opt}</p>
+                                `).join('') : ''}
+                                ${q.answer !== undefined ? `
+                                    <p class="answer-text">Answer: ${typeof q.answer === 'number' && q.options ? q.options[q.answer] : q.answer}</p>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
                     <script>
-                        window.onload = function() {
-                            setTimeout(() => {
-                                window.print();
-                                window.close();
-                            }, 500);
-                        };
+                        function downloadPDF() {
+                            const element = document.getElementById('content');
+                            const opt = {
+                                margin: [10, 10, 10, 10],
+                                filename: '${bank.title.replace(/\s+/g, '_')}.pdf',
+                                image: { type: 'jpeg', quality: 0.98 },
+                                html2canvas: { scale: 2, useCORS: true },
+                                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                                pagebreak: { mode: ['css', 'legacy'] }
+                            };
+                            
+                            // Temporarily remove max-width and padding for perfect PDF scaling
+                            element.style.maxWidth = 'none';
+                            element.style.padding = '10px';
+                            element.style.boxShadow = 'none';
+
+                            html2pdf().set(opt).from(element).save().then(() => {
+                                // Restore styles
+                                element.style.maxWidth = '800px';
+                                element.style.padding = '30px';
+                                element.style.boxShadow = '0 4px 6px -1px rgb(0 0 0 / 0.1)';
+                            });
+                        }
                     </script>
                 </body>
                 </html>
